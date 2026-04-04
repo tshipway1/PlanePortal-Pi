@@ -61,6 +61,11 @@ class OpenSkyClient:
         finally:
             response.close()
 
+        if not isinstance(payload, dict):
+            raise RuntimeError(
+                "OpenSky token payload was {}, not object".format(type(payload).__name__)
+            )
+
         access_token = payload.get("access_token")
         expires_in = int(payload.get("expires_in", 1800))
         if not access_token:
@@ -94,5 +99,10 @@ class OpenSkyClient:
             payload = response.json()
         finally:
             response.close()
+
+        if not isinstance(payload, dict):
+            raise RuntimeError(
+                "OpenSky states payload was {}, not object".format(type(payload).__name__)
+            )
 
         return payload.get("states") or []

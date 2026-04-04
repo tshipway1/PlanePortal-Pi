@@ -55,7 +55,13 @@ class ADSBDBClient:
         finally:
             response.close()
 
+        if not isinstance(payload, dict):
+            return None
+
         value = payload.get("response")
+        if not isinstance(value, dict):
+            value = None
+
         self._cache[mode_s] = {
             "value": value,
             "expires_at": now + self._config.adsb_cache_seconds,

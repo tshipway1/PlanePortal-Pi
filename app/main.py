@@ -90,7 +90,7 @@ class PlanePortalApp:
             remaining -= 1
 
     def _short_error(self, error):
-        text = str(error)
-        if len(text) <= 36:
+        text = "{}: {}".format(type(error).__name__, error)
+        if len(text) <= 52:
             return text
-        return text[:35] + "..."
+        return text[:51] + "..."
