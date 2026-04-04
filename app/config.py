@@ -5,7 +5,12 @@ def _get_string(name, default=None):
     value = os.getenv(name)
     if value is None:
         return default
-    value = value.strip()
+
+    if isinstance(value, str):
+        value = value.strip()
+    else:
+        value = str(value).strip()
+
     if not value:
         return default
     return value
