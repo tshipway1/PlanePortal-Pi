@@ -4,11 +4,17 @@ import time
 def _url_encode(value):
     safe = "-_.~"
     output = ""
-    for char in value:
-        if char.isalnum() or char in safe:
+    for char in str(value):
+        codepoint = ord(char)
+        is_ascii_alnum = (
+            48 <= codepoint <= 57
+            or 65 <= codepoint <= 90
+            or 97 <= codepoint <= 122
+        )
+        if is_ascii_alnum or char in safe:
             output += char
         else:
-            output += "%{:02X}".format(ord(char))
+            output += "%{:02X}".format(codepoint)
     return output
 
 
