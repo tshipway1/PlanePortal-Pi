@@ -58,8 +58,6 @@ class AppConfig:
         )
         self.adsb_cache_seconds = max(300, _get_int("PLANEPORTAL_ADSB_CACHE_SECONDS", 1800))
         self.enrichment_limit = max(1, _get_int("PLANEPORTAL_ENRICHMENT_LIMIT", 4))
-        self.enable_photos = _get_bool("PLANEPORTAL_ENABLE_PHOTOS", False)
-        self.test_image_url = _get_string("PLANEPORTAL_TEST_IMAGE_URL")
         self.debug = _get_bool("PLANEPORTAL_DEBUG", False)
 
     @property

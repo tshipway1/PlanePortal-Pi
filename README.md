@@ -8,7 +8,16 @@ CircuitPython application for an Adafruit PyPortal that watches a fixed circular
 - Applies a true circular radius filter on-device, defaulting to 3 miles
 - Keeps a rolling recent-aircraft memory so a plane can remain visible after it passes through the radius
 - Enriches the most relevant aircraft with ADSBDB metadata such as registration, aircraft type, airline, and route when available
-- Renders a text-first dashboard designed for the PyPortal's 320x240 display
+- Renders a compact aviation-style dashboard for the PyPortal's 320x240 display, including a mini radar view, status badges, and a recent-traffic column
+
+## What the screen shows
+
+- Top bar: app title, source status, and IP / source summary
+- Left radar tile: nearby aircraft plotted by bearing and relative distance from your configured radius
+- Featured aircraft card: callsign, route, type / operator, distance, altitude, speed, heading, and vertical trend
+- Status badges: live/recent state and climb/descent trend
+- Right column: compact recent / nearby aircraft list
+- Footer: refresh summary plus non-fatal notes such as delayed enrichment
 
 ## Current implementation status
 
@@ -17,8 +26,9 @@ This is the first implementation pass.
 - Live OpenSky polling: implemented
 - Local recent-flight memory: implemented
 - ADSBDB enrichment: implemented
-- Photo slot: placeholder silhouette with optional fixed-image prototype
-- Remote per-aircraft photo rendering: still deferred because device-only image handling is the least reliable part of the stack on PyPortal
+- Radar-style live display: implemented
+- Altitude color coding and compact status badges: implemented
+- Experimental image support: removed in favor of a cleaner radar-first display
 
 ## Required CircuitPython libraries
 
@@ -39,6 +49,8 @@ The project uses built-in `board`, `displayio`, and `terminalio`, so no extra fo
 4. Copy [settings.toml.example](settings.toml.example) to `settings.toml` on `CIRCUITPY` and fill in your values.
 5. Reset the board.
 
+If the app fails during boot or refresh, open the serial console to read lines beginning with `Plane Portal error:`.
+
 ## Configuration
 
 The app reads configuration from `settings.toml`.
@@ -55,35 +67,28 @@ Recommended:
 - `OPENSKY_CLIENT_ID`
 - `OPENSKY_CLIENT_SECRET`
 
+Optional:
+
+- `PLANEPORTAL_RADIUS_MILES`
+- `PLANEPORTAL_REFRESH_SECONDS`
+- `PLANEPORTAL_RECENT_WINDOW_MINUTES`
+- `PLANEPORTAL_ENRICHMENT_LIMIT`
+- `PLANEPORTAL_ADSB_CACHE_SECONDS`
+- `PLANEPORTAL_DEBUG`
+
 Notes:
 
 - `settings.toml` does not support float literals, so latitude, longitude, and radius should be stored as quoted strings.
 - Without OpenSky credentials the app still works in anonymous mode, but with lower rate limits.
-- The controlled photo test currently expects a remote BMP image URL.
-- The current build still does not attempt JPG decoding or live per-aircraft photo rendering.
-
-## Controlled photo test
-
-You can now test the picture pipeline with a fixed remote BMP.
-
-1. Set `PLANEPORTAL_ENABLE_PHOTOS = "1"` in `settings.toml`.
-2. Set `PLANEPORTAL_TEST_IMAGE_URL` to a publicly reachable BMP image URL.
-3. Keep the image at `98x70` pixels or smaller for the current test layout.
-4. Reset the board.
-
-Behavior:
-
-- If the bitmap downloads and fits the reserved image area, it will replace the silhouette.
-- If the request fails, times out, or returns a non-BMP image, the app silently falls back to the silhouette and keeps running.
-
-This is only a plumbing test for image download and display. It is not yet wired to live aircraft metadata.
+- OpenSky supplies the live aircraft position and movement data.
+- ADSBDB supplies best-effort aircraft metadata such as type, registration, route, and airline.
 
 ## Known limitations
 
 - OpenSky now uses OAuth2 client credentials, so valid OpenSky API credentials are strongly recommended.
 - The "recently overhead" list is maintained locally from prior refreshes. It is not historical flight data pulled from the API.
-- ADSBDB metadata is best-effort only. Some aircraft have no route or photo information.
-- The photo area currently shows a local silhouette instead of a downloaded plane image.
+- ADSBDB metadata is best-effort only. Some aircraft have no route information or type details.
+- The app intentionally does not attempt aircraft photo rendering on-device.
 
 ## File layout
 
@@ -99,6 +104,6 @@ This is only a plumbing test for image download and display. It is not yet wired
 ## Next recommended steps
 
 1. Test the current build directly on the PyPortal hardware.
-2. Tune the UI text density against your local sky traffic.
+2. Tune the live radar and recent-traffic layout against your local sky traffic.
 3. Add optional touch interactions for cycling the featured aircraft.
-4. Revisit best-effort photo loading only after the core polling loop is stable on-device.
+4. Keep refining the radar-first display and resist reintroducing features that do not fit the hardware well.

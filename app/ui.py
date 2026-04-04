@@ -187,8 +187,6 @@ class PlanePortalUI:
         self._display = board.DISPLAY
         self._root = displayio.Group()
         self._display.root_group = self._root
-        self._photo_bitmap = None
-        self._photo_tilegrid = None
         self._radar_bitmap = None
         self._radar_tilegrid = None
 
@@ -294,27 +292,8 @@ class PlanePortalUI:
     def _clear_image_group(self):
         while len(self._image_group):
             self._image_group.pop()
-        self._photo_bitmap = None
-        self._photo_tilegrid = None
         self._radar_bitmap = None
         self._radar_tilegrid = None
-
-    def show_placeholder_photo(self):
-        self._clear_image_group()
-        self._build_plane_glyph()
-
-    def show_test_photo(self, bitmap_path):
-        bitmap = displayio.OnDiskBitmap(bitmap_path)
-        if bitmap.width > RADAR_WIDTH or bitmap.height > RADAR_HEIGHT:
-            raise RuntimeError("Photo BMP must fit inside 98x70 pixels")
-
-        self._clear_image_group()
-        tilegrid = displayio.TileGrid(bitmap, pixel_shader=bitmap.pixel_shader)
-        tilegrid.x = (RADAR_WIDTH - bitmap.width) // 2
-        tilegrid.y = (RADAR_HEIGHT - bitmap.height) // 2
-        self._image_group.append(tilegrid)
-        self._photo_bitmap = bitmap
-        self._photo_tilegrid = tilegrid
 
     def _build_radar_background(self):
         bitmap = displayio.Bitmap(RADAR_WIDTH, RADAR_HEIGHT, 8)
@@ -436,8 +415,7 @@ class PlanePortalUI:
             "{}  {}".format(source_label, ip_address), 24
         )
         self._side_title.text = "RECENT SKY"
-        if self._photo_tilegrid is None:
-            self.show_radar_snapshot(snapshot)
+        self.show_radar_snapshot(snapshot)
 
         self._featured_status.text = featured["status_text"]
         self._featured_status.color = WARN if stale else ACCENT
