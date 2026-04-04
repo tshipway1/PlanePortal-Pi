@@ -39,7 +39,7 @@ class PlanePortalApp:
                 states = self._opensky.fetch_states(self._tracker.current_bounds())
                 snapshot_time = time.monotonic()
                 snapshot = self._tracker.ingest_states(states, snapshot_time)
-                self._enrich(snapshot)
+                enrich_note = self._enrich(snapshot)
                 snapshot = self._tracker.snapshot(time.monotonic())
 
                 detail = "{} live, {} recent inside {} mi".format(
@@ -47,6 +47,8 @@ class PlanePortalApp:
                     snapshot["recent_count"],
                     int(self._config.radius_miles),
                 )
+                if enrich_note:
+                    detail = "{}  {}".format(detail, enrich_note)
                 self._ui.render_snapshot(
                     snapshot,
                     self._network.ip_address,
@@ -76,10 +78,19 @@ class PlanePortalApp:
             self._sleep_until_next_cycle(cycle_started)
 
     def _enrich(self, snapshot):
+        note = None
         for record in snapshot["records"][: self._config.enrichment_limit]:
-            enrichment = self._adsbdb.enrich_aircraft(record["icao24"], record["callsign"])
+            try:
+                enrichment = self._adsbdb.enrich_aircraft(
+                    record["icao24"], record["callsign"]
+                )
+            except Exception as error:
+                print("Plane Portal enrichment error:", type(error).__name__, error)
+                note = "route lookup delayed"
+                continue
             if enrichment:
                 self._tracker.attach_enrichment(record["icao24"], enrichment)
+        return note
 
     def _sleep_until_next_cycle(self, cycle_started):
         elapsed = time.monotonic() - cycle_started

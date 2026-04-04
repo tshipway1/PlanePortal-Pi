@@ -120,7 +120,7 @@ class PlanePortalUI:
             terminalio.FONT, text="", color=TEXT_MUTED, x=18, y=184
         )
         self._image_badge = label.Label(
-            terminalio.FONT, text="", color=TEXT, x=24, y=112
+            terminalio.FONT, text="", color=TEXT_MUTED, x=18, y=132
         )
         self._side_title = label.Label(
             terminalio.FONT, text="RECENT SKY", color=TEXT, x=222, y=56
@@ -162,14 +162,15 @@ class PlanePortalUI:
         self._header_subtitle.text = _truncate(body, 24)
         self._featured_status.color = WARN
         self._featured_status.text = "STANDBY"
-        self._featured_callsign.text = "MESSAGE"
-        self._featured_type.text = _truncate(body, 24)
-        self._featured_route.text = _truncate(footer, 24)
-        self._featured_metrics.text = ""
-        self._featured_metrics_secondary.text = ""
+        self._featured_callsign.text = ""
+        self._featured_type.text = ""
+        self._featured_route.text = ""
+        self._featured_metrics.text = _wrap_text(body, 22, 2)
+        self._featured_metrics_secondary.text = _wrap_text(footer, 22, 2)
         self._featured_owner.text = ""
-        self._image_badge.text = "waiting"
-        self._side_list.text = _wrap_text(footer, 14, 5)
+        self._image_badge.text = ""
+        self._side_title.text = "STATUS"
+        self._side_list.text = _wrap_text("Waiting for first nearby aircraft", 13, 5)
         self._footer.color = TEXT_MUTED
         self._footer.text = _truncate(footer, 46)
 
@@ -177,6 +178,8 @@ class PlanePortalUI:
         self._header_subtitle.text = _truncate(source_label, 24)
         self._featured_status.color = WARN
         self._featured_status.text = "REFRESH"
+        self._side_title.text = "STATUS"
+        self._side_list.text = _wrap_text(detail, 13, 5)
         self._footer.color = WARN
         self._footer.text = _truncate(detail, 46)
 
@@ -194,16 +197,19 @@ class PlanePortalUI:
         self._header_subtitle.text = _truncate(
             "{}  {}".format(source_label, ip_address), 24
         )
+        self._side_title.text = "RECENT SKY"
 
         self._featured_status.text = featured["status_text"]
         self._featured_status.color = WARN if stale else ACCENT
         self._featured_callsign.text = _truncate(featured["callsign"], 12)
         self._featured_type.text = _truncate(self._aircraft_line(featured), 24)
         self._featured_route.text = _truncate(self._route_line(featured), 24)
-        self._featured_metrics.text = self._metric_line(featured)
-        self._featured_metrics_secondary.text = self._metric_line_secondary(featured)
-        self._featured_owner.text = _truncate(self._owner_line(featured), 30)
-        self._image_badge.text = _truncate(self._image_badge_text(featured), 15)
+        self._featured_metrics.text = _truncate(self._metric_line(featured), 26)
+        self._featured_metrics_secondary.text = _truncate(
+            self._metric_line_secondary(featured), 26
+        )
+        self._featured_owner.text = _truncate(self._owner_line(featured), 26)
+        self._image_badge.text = _truncate(self._image_badge_text(featured), 12)
         self._side_list.text = self._side_list_text(snapshot["others"])
 
         footer_text = detail or "{} live, {} recent inside {} mi".format(
@@ -249,7 +255,7 @@ class PlanePortalUI:
 
     def _metric_line_secondary(self, record):
         climb = record["vertical_rate_fpm"]
-        return "bearing {}   hdg {}   climb {} fpm".format(
+        return "BRG {}  HDG {}  VS {}".format(
             record["bearing"],
             record["heading"],
             climb if climb is not None else "--",
