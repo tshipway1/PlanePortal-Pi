@@ -83,7 +83,12 @@ def bounding_box(latitude, longitude, radius_miles, margin=1.15):
 def _clean_callsign(value):
     if value is None:
         return "Unknown"
-    value = value.strip()
+
+    if isinstance(value, str):
+        value = value.strip()
+    else:
+        value = str(value).strip()
+
     if not value:
         return "Unknown"
     return value

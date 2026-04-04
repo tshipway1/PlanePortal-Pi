@@ -30,6 +30,39 @@ def _truncate(text, limit):
     return text[: limit - 1] + "..."
 
 
+def _wrap_text(text, width, max_lines):
+    text = str(text or "")
+    if not text:
+        return ""
+
+    words = text.split()
+    if not words:
+        return ""
+
+    lines = []
+    current = words[0]
+    for word in words[1:]:
+        proposal = current + " " + word
+        if len(proposal) <= width:
+            current = proposal
+            continue
+        lines.append(current)
+        current = word
+        if len(lines) >= max_lines - 1:
+            break
+
+    if len(lines) < max_lines:
+        lines.append(current)
+
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+
+    if len(lines) == max_lines and len(" ".join(words)) > len(" ".join(lines)):
+        lines[-1] = _truncate(lines[-1], max(4, width - 1))
+
+    return "\n".join(lines)
+
+
 class PlanePortalUI:
     def __init__(self, config):
         self._config = config
@@ -126,17 +159,17 @@ class PlanePortalUI:
 
     def show_message(self, title, body, footer):
         self._header_title.text = _truncate(title.upper(), 22)
-        self._header_subtitle.text = "ready for live sky data"
+        self._header_subtitle.text = _truncate(body, 24)
         self._featured_status.color = WARN
         self._featured_status.text = "STANDBY"
-        self._featured_callsign.text = _truncate(body, 18)
-        self._featured_type.text = ""
-        self._featured_route.text = ""
+        self._featured_callsign.text = "MESSAGE"
+        self._featured_type.text = _truncate(body, 24)
+        self._featured_route.text = _truncate(footer, 24)
         self._featured_metrics.text = ""
         self._featured_metrics_secondary.text = ""
         self._featured_owner.text = ""
         self._image_badge.text = "waiting"
-        self._side_list.text = "Add your home\ncoordinates and\nWiFi in\nsettings.toml"
+        self._side_list.text = _wrap_text(footer, 14, 5)
         self._footer.color = TEXT_MUTED
         self._footer.text = _truncate(footer, 46)
 

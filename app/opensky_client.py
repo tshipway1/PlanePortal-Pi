@@ -9,6 +9,7 @@ STATES_URL = "https://opensky-network.org/api/states/all"
 
 
 def _url_encode(value):
+    value = str(value)
     safe = "-_.~"
     output = ""
     for char in value:

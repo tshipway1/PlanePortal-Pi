@@ -31,7 +31,7 @@ class ADSBDBClient:
         if not mode_s:
             return None
 
-        mode_s = mode_s.upper()
+        mode_s = str(mode_s).upper()
         now = time.monotonic()
         cached = self._cached(mode_s, now)
         if cached is not None:
@@ -40,7 +40,12 @@ class ADSBDBClient:
             return None
 
         url = "https://api.adsbdb.com/v0/aircraft/{}".format(_url_encode(mode_s))
-        clean_callsign = (callsign or "").strip()
+        if callsign is None:
+            clean_callsign = ""
+        elif isinstance(callsign, str):
+            clean_callsign = callsign.strip()
+        else:
+            clean_callsign = str(callsign).strip()
         if clean_callsign:
             url += "?callsign={}".format(_url_encode(clean_callsign))
 

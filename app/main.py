@@ -71,8 +71,7 @@ class PlanePortalApp:
                         self._short_error(error),
                         "Check WiFi, OpenSky credentials, and location settings",
                     )
-                if self._config.debug:
-                    print("Plane Portal error:", error)
+                print("Plane Portal error:", type(error).__name__, error)
 
             self._sleep_until_next_cycle(cycle_started)
 
