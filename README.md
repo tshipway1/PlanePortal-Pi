@@ -17,8 +17,8 @@ This is the first implementation pass.
 - Live OpenSky polling: implemented
 - Local recent-flight memory: implemented
 - ADSBDB enrichment: implemented
-- Photo slot: placeholder silhouette only
-- Remote aircraft photo rendering: intentionally deferred because device-only image handling is the least reliable part of the stack on PyPortal
+- Photo slot: placeholder silhouette with optional fixed-image prototype
+- Remote per-aircraft photo rendering: still deferred because device-only image handling is the least reliable part of the stack on PyPortal
 
 ## Required CircuitPython libraries
 
@@ -59,7 +59,24 @@ Notes:
 
 - `settings.toml` does not support float literals, so latitude, longitude, and radius should be stored as quoted strings.
 - Without OpenSky credentials the app still works in anonymous mode, but with lower rate limits.
-- The current build does not attempt network image conversion or JPG decoding.
+- The controlled photo test currently expects a remote BMP image URL.
+- The current build still does not attempt JPG decoding or live per-aircraft photo rendering.
+
+## Controlled photo test
+
+You can now test the picture pipeline with a fixed remote BMP.
+
+1. Set `PLANEPORTAL_ENABLE_PHOTOS = "1"` in `settings.toml`.
+2. Set `PLANEPORTAL_TEST_IMAGE_URL` to a publicly reachable BMP image URL.
+3. Keep the image at `98x70` pixels or smaller for the current test layout.
+4. Reset the board.
+
+Behavior:
+
+- If the bitmap downloads and fits the reserved image area, it will replace the silhouette.
+- If the request fails, times out, or returns a non-BMP image, the app silently falls back to the silhouette and keeps running.
+
+This is only a plumbing test for image download and display. It is not yet wired to live aircraft metadata.
 
 ## Known limitations
 

@@ -18,6 +18,9 @@ PLANEPORTAL_RECENT_WINDOW_MINUTES = 5
 PLANEPORTAL_ADSB_CACHE_SECONDS = 1800
 PLANEPORTAL_ENRICHMENT_LIMIT = 4
 
-# Leave disabled until you have proven image handling on your board.
+# Controlled photo prototype: set this to 1 and provide a small BMP URL.
+# Recommended test size: 98x70 BMP or smaller.
+# If the URL does not return a BMP, the app falls back to the silhouette.
 PLANEPORTAL_ENABLE_PHOTOS = "0"
+PLANEPORTAL_TEST_IMAGE_URL = "https://example.com/test-image-98x70.bmp"
 PLANEPORTAL_DEBUG = "0"

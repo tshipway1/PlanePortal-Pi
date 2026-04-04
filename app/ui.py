@@ -69,6 +69,8 @@ class PlanePortalUI:
         self._display = board.DISPLAY
         self._root = displayio.Group()
         self._display.root_group = self._root
+        self._photo_bitmap = None
+        self._photo_tilegrid = None
 
         self._build_scene()
         self.show_message(
@@ -156,6 +158,29 @@ class PlanePortalUI:
         self._image_group.append(_solid_block(20, 4, WARN, 39, 17))
         self._image_group.append(_solid_block(20, 4, WARN, 39, 49))
         self._image_group.append(_solid_block(10, 4, WARN, 44, 57))
+
+    def _clear_image_group(self):
+        while len(self._image_group):
+            self._image_group.pop()
+        self._photo_bitmap = None
+        self._photo_tilegrid = None
+
+    def show_placeholder_photo(self):
+        self._clear_image_group()
+        self._build_plane_glyph()
+
+    def show_test_photo(self, bitmap_path):
+        bitmap = displayio.OnDiskBitmap(bitmap_path)
+        if bitmap.width > 98 or bitmap.height > 70:
+            raise RuntimeError("Photo BMP must fit inside 98x70 pixels")
+
+        self._clear_image_group()
+        tilegrid = displayio.TileGrid(bitmap, pixel_shader=bitmap.pixel_shader)
+        tilegrid.x = (98 - bitmap.width) // 2
+        tilegrid.y = (70 - bitmap.height) // 2
+        self._image_group.append(tilegrid)
+        self._photo_bitmap = bitmap
+        self._photo_tilegrid = tilegrid
 
     def show_message(self, title, body, footer):
         self._header_title.text = _truncate(title.upper(), 22)
