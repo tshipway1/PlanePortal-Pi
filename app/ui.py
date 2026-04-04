@@ -29,6 +29,7 @@ BADGE_TREND_X = 160
 BADGE_Y = 46
 BADGE_WIDTH = 28
 BADGE_HEIGHT = 12
+BADGE_TEXT_Y = 55
 
 
 def _solid_block(width, height, color, x, y):
@@ -224,10 +225,10 @@ class PlanePortalUI:
         self._status_badge_bg = _solid_block(BADGE_WIDTH, BADGE_HEIGHT, ACCENT, BADGE_STATUS_X, BADGE_Y)
         self._trend_badge_bg = _solid_block(BADGE_WIDTH, BADGE_HEIGHT, WARN, BADGE_TREND_X, BADGE_Y)
         self._status_badge_text = label.Label(
-            terminalio.FONT, text="", color=BACKGROUND, x=131, y=55
+            terminalio.FONT, text="", color=BACKGROUND, x=BADGE_STATUS_X, y=BADGE_TEXT_Y
         )
         self._trend_badge_text = label.Label(
-            terminalio.FONT, text="", color=BACKGROUND, x=165, y=55
+            terminalio.FONT, text="", color=BACKGROUND, x=BADGE_TREND_X, y=BADGE_TEXT_Y
         )
         self._featured_callsign = label.Label(
             terminalio.FONT, text="", color=TEXT, scale=2, x=126, y=74
@@ -367,10 +368,18 @@ class PlanePortalUI:
         return 4
 
     def _set_badges(self, status_text, status_color, trend_text, trend_color):
+        status_text = _truncate(status_text, 4)
+        trend_text = _truncate(trend_text, 4)
         self._status_badge_bg.pixel_shader[0] = status_color
         self._trend_badge_bg.pixel_shader[0] = trend_color
-        self._status_badge_text.text = _truncate(status_text, 4)
-        self._trend_badge_text.text = _truncate(trend_text, 4)
+        self._status_badge_text.text = status_text
+        self._trend_badge_text.text = trend_text
+        self._status_badge_text.x = self._badge_text_x(BADGE_STATUS_X, status_text)
+        self._trend_badge_text.x = self._badge_text_x(BADGE_TREND_X, trend_text)
+
+    def _badge_text_x(self, badge_x, text):
+        text_width = len(text) * 6
+        return badge_x + max(1, (BADGE_WIDTH - text_width) // 2)
 
     def show_message(self, title, body, footer):
         self._header_title.text = _truncate(title.upper(), 22)
@@ -465,7 +474,7 @@ class PlanePortalUI:
         destination_code = destination.get("iata_code") or destination.get("icao_code")
         if origin_code and destination_code:
             return "{} -> {}".format(origin_code, destination_code)
-        return record["origin_country"]
+        return None
 
     def _metric_line(self, record):
         return "{}  {}  {}".format(
@@ -483,13 +492,15 @@ class PlanePortalUI:
 
     def _route_badge(self, record):
         route = self._route_line(record)
+        if not route:
+            return "NO ROUTE"
         return route.replace(" -> ", ">")
 
     def _owner_badge(self, record):
         owner = self._owner_line(record)
-        if record.get("altitude_ft") is None:
-            return owner
-        return "{}  {}".format(owner, record["category_name"][:4].upper())
+        if not owner:
+            return record.get("category_name") or "Aircraft"
+        return _truncate(owner, 20)
 
     def _trend_color(self, vertical_rate_fpm):
         if vertical_rate_fpm is None:
@@ -511,7 +522,7 @@ class PlanePortalUI:
             return aircraft.get("registered_owner")
         if aircraft.get("manufacturer"):
             return aircraft.get("manufacturer")
-        return record["category_name"]
+        return None
 
     def _image_badge_text(self, record):
         enrichment = record.get("enrichment") or {}

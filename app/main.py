@@ -86,7 +86,7 @@ class PlanePortalApp:
                 )
             except Exception as error:
                 print("Plane Portal enrichment error:", type(error).__name__, error)
-                note = "route lookup delayed"
+                note = "metadata delayed"
                 continue
             if enrichment:
                 self._tracker.attach_enrichment(record["icao24"], enrichment)
