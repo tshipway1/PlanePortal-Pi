@@ -381,7 +381,13 @@ class PlanePortalUI:
         text_width = len(text) * 6
         return badge_x + max(1, (BADGE_WIDTH - text_width) // 2)
 
-    def show_message(self, title, body, footer):
+    def show_message(self, title, body, footer, side_text=None, use_radar=False):
+        if use_radar:
+            self.show_radar_snapshot({"records": [], "featured": None})
+        else:
+            self._clear_image_group()
+            self._build_plane_glyph()
+
         self._header_title.text = _truncate(title.upper(), 22)
         self._header_subtitle.text = _truncate(body, 24)
         self._featured_status.color = WARN
@@ -395,7 +401,9 @@ class PlanePortalUI:
         self._featured_owner.text = ""
         self._image_badge.text = ""
         self._side_title.text = "STATUS"
-        self._side_list.text = _wrap_text("Waiting for first nearby aircraft", 13, 5)
+        self._side_list.text = _wrap_text(
+            side_text or "Waiting for first nearby aircraft", 13, 5
+        )
         self._footer.color = TEXT_MUTED
         self._footer.text = _truncate(footer, 46)
 
@@ -412,11 +420,22 @@ class PlanePortalUI:
     def render_snapshot(self, snapshot, ip_address, source_label, stale=False, detail=None):
         featured = snapshot["featured"]
         if featured is None:
-            self.show_message(
-                "Quiet Sky",
-                "No planes logged",
-                "Watching {} miles around home".format(self._config.radius_miles),
-            )
+            if snapshot.get("has_seen_aircraft"):
+                self.show_message(
+                    "Quiet Sky",
+                    "No aircraft now",
+                    "Watching {} miles around home".format(self._config.radius_miles),
+                    side_text="No aircraft in recent window",
+                    use_radar=True,
+                )
+            else:
+                self.show_message(
+                    "Quiet Sky",
+                    "No planes logged",
+                    "Watching {} miles around home".format(self._config.radius_miles),
+                    side_text="Waiting for first nearby aircraft",
+                    use_radar=False,
+                )
             return
 
         self._header_title.text = "PLANE PORTAL"

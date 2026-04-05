@@ -116,6 +116,7 @@ class FlightTracker:
     def __init__(self, config):
         self._config = config
         self._registry = {}
+        self._has_seen_aircraft = False
 
     def current_bounds(self):
         return bounding_box(
@@ -135,6 +136,7 @@ class FlightTracker:
                 record["enrichment"] = previous["enrichment"]
 
             self._registry[record["icao24"]] = record
+            self._has_seen_aircraft = True
 
         self._prune(now)
         return self.snapshot(now)
@@ -166,6 +168,7 @@ class FlightTracker:
             "others": records[1:4],
             "live_count": live_count,
             "recent_count": max(0, len(records) - live_count),
+            "has_seen_aircraft": self._has_seen_aircraft,
         }
 
     def _prune(self, now):

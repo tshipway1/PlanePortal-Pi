@@ -54,7 +54,7 @@ class AppConfig:
         self.radius_miles = max(0.5, _get_float("PLANEPORTAL_RADIUS_MILES", 3.0))
         self.refresh_seconds = max(30, _get_int("PLANEPORTAL_REFRESH_SECONDS", 120))
         self.recent_window_minutes = max(
-            2, _get_int("PLANEPORTAL_RECENT_WINDOW_MINUTES", 5)
+            2, _get_int("PLANEPORTAL_RECENT_WINDOW_MINUTES", 10)
         )
         self.adsb_cache_seconds = max(300, _get_int("PLANEPORTAL_ADSB_CACHE_SECONDS", 1800))
         self.enrichment_limit = max(1, _get_int("PLANEPORTAL_ENRICHMENT_LIMIT", 4))
