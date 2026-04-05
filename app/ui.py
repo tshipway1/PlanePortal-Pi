@@ -424,7 +424,7 @@ class PlanePortalUI:
                 self.show_message(
                     "Quiet Sky",
                     "No aircraft now",
-                    "Watching {} miles around home".format(self._config.radius_miles),
+                    "Watching {} miles around watch point".format(self._config.radius_miles),
                     side_text="No aircraft in recent window",
                     use_radar=True,
                 )
@@ -432,7 +432,7 @@ class PlanePortalUI:
                 self.show_message(
                     "Quiet Sky",
                     "No planes logged",
-                    "Watching {} miles around home".format(self._config.radius_miles),
+                    "Watching {} miles around watch point".format(self._config.radius_miles),
                     side_text="Waiting for first nearby aircraft",
                     use_radar=False,
                 )

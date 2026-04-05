@@ -72,7 +72,7 @@ class AppConfig:
         if not self.wifi_ssid or not self.wifi_password:
             return "Add CIRCUITPY_WIFI_SSID and CIRCUITPY_WIFI_PASSWORD in settings.toml"
         if self.home_latitude == 0.0 and self.home_longitude == 0.0:
-            return "Add PLANEPORTAL_HOME_LATITUDE and PLANEPORTAL_HOME_LONGITUDE in settings.toml"
+            return "Add the watch point coordinates in settings.toml using PLANEPORTAL_HOME_LATITUDE and PLANEPORTAL_HOME_LONGITUDE"
         return None
 
     def source_label(self):

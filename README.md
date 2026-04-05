@@ -1,10 +1,10 @@
 # Plane Portal
 
-CircuitPython application for an Adafruit PyPortal that watches a fixed circular area around your home location, remembers aircraft seen in the last few minutes, and shows the most relevant nearby planes on the display.
+CircuitPython application for an Adafruit PyPortal that watches a fixed circular area around a configured center point, remembers aircraft seen in the last few minutes, and shows the most relevant nearby planes on the display.
 
 ## What it does
 
-- Polls OpenSky for live aircraft state vectors near a configured location
+- Polls OpenSky for live aircraft state vectors near a configured watch point
 - Applies a true circular radius filter on-device, defaulting to 3 miles
 - Keeps a rolling recent-aircraft memory so a plane can remain visible after it passes through the radius
 - Enriches the most relevant aircraft with ADSBDB metadata such as registration, aircraft type, airline, and route when available
@@ -13,7 +13,7 @@ CircuitPython application for an Adafruit PyPortal that watches a fixed circular
 ## What the screen shows
 
 - Top bar: app title, source status, and IP / source summary
-- Left radar tile: nearby aircraft plotted by bearing and relative distance from your configured radius
+- Left radar tile: nearby aircraft plotted by bearing and relative distance from your configured watch point
 - Featured aircraft card: callsign, route, type / operator, distance, altitude, speed, heading, and vertical trend
 - Status badges: live/recent state and climb/descent trend
 - Right column: compact recent / nearby aircraft list
@@ -61,6 +61,8 @@ Required:
 - `CIRCUITPY_WIFI_PASSWORD`
 - `PLANEPORTAL_HOME_LATITUDE`
 - `PLANEPORTAL_HOME_LONGITUDE`
+
+These existing key names are kept for compatibility, but they represent the app's watch point or center point, not necessarily a home location.
 
 Recommended:
 
