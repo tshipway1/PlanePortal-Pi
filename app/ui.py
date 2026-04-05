@@ -453,7 +453,7 @@ class PlanePortalUI:
             _trend_label(featured["vertical_rate_fpm"]),
             self._trend_color(featured["vertical_rate_fpm"]),
         )
-        self._featured_callsign.text = _truncate(featured["callsign"], 8)
+        self._featured_callsign.text = _truncate(featured["callsign"], 6)
         self._featured_type.text = _truncate(self._aircraft_line(featured), 14)
         self._featured_type.color = _altitude_color(featured.get("altitude_ft"))
         self._featured_route.text = _truncate(self._route_badge(featured), 16)
