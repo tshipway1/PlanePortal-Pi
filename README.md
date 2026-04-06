@@ -19,6 +19,30 @@ CircuitPython application for an Adafruit PyPortal that watches a fixed circular
 - Right column: compact recent / nearby aircraft list
 - Footer: refresh summary plus non-fatal notes such as delayed enrichment
 
+Quiet-state behavior:
+
+- Before the app has ever seen a nearby aircraft, the status panel says `Waiting for first nearby aircraft`
+- After aircraft have been seen and later leave the radius / recent window, the status panel switches to a quiet-sky message instead of pretending the app has never seen any traffic
+
+## Screen legend
+
+Featured card abbreviations:
+
+- `LIVE` / `RECE`: the aircraft is live in the current refresh or only recently seen
+- `CLB` / `DSC` / `LVL`: climbing, descending, or roughly level
+- `MI`: miles from the configured watch point
+- `KFT`: altitude in thousands of feet
+- `KT`: speed in knots
+- `BRG`: bearing from the watch point to the aircraft
+- `HDG`: aircraft heading
+- `VS`: vertical speed in feet per minute
+
+Route and metadata fallbacks:
+
+- If route enrichment succeeds, the route is shown as a compact badge such as `SEA>SFO`
+- If no route could be resolved, the app shows `NO ROUTE`
+- If no specific aircraft type could be resolved, the app falls back to a broader aircraft category
+
 ## Current implementation status
 
 This is the first implementation pass.
@@ -82,8 +106,23 @@ Notes:
 
 - `settings.toml` does not support float literals, so latitude, longitude, and radius should be stored as quoted strings.
 - Without OpenSky credentials the app still works in anonymous mode, but with lower rate limits.
-- OpenSky supplies the live aircraft position and movement data.
-- ADSBDB supplies best-effort aircraft metadata such as type, registration, route, and airline.
+- OpenSky supplies the live aircraft position and movement data: callsign, location, altitude, speed, heading, vertical rate, and broad aircraft category.
+- ADSBDB supplies best-effort aircraft metadata such as specific type, registration, route, airline, and operator.
+- The current default recent window is 10 minutes.
+
+Minimal example:
+
+```toml
+CIRCUITPY_WIFI_SSID = "your_wifi_name"
+CIRCUITPY_WIFI_PASSWORD = "your_wifi_password"
+
+PLANEPORTAL_HOME_LATITUDE = "47.6062"
+PLANEPORTAL_HOME_LONGITUDE = "-122.3321"
+
+PLANEPORTAL_RADIUS_MILES = "3"
+PLANEPORTAL_REFRESH_SECONDS = 120
+PLANEPORTAL_RECENT_WINDOW_MINUTES = 10
+```
 
 ## Known limitations
 
@@ -91,6 +130,7 @@ Notes:
 - The "recently overhead" list is maintained locally from prior refreshes. It is not historical flight data pulled from the API.
 - ADSBDB metadata is best-effort only. Some aircraft have no route information or type details.
 - The app intentionally does not attempt aircraft photo rendering on-device.
+- Some live fields can be present even when route/type enrichment is missing, so the featured aircraft may still render with partial metadata.
 
 ## File layout
 
@@ -102,10 +142,3 @@ Notes:
 - [app/tracker.py](app/tracker.py): radius filtering, distance math, and recent-flight tracking
 - [app/ui.py](app/ui.py): display layout and rendering
 - [app/main.py](app/main.py): application loop
-
-## Next recommended steps
-
-1. Test the current build directly on the PyPortal hardware.
-2. Tune the live radar and recent-traffic layout against your local sky traffic.
-3. Add optional touch interactions for cycling the featured aircraft.
-4. Keep refining the radar-first display and resist reintroducing features that do not fit the hardware well.
