@@ -723,19 +723,23 @@
         ctx.closePath();
       },
       military(s) {
-        // Fighter jet: delta wings, twin tail
+        // Fighter jet: sharp delta wings, narrow body, canards
         ctx.beginPath();
         ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.15, -s*0.3);
-        ctx.lineTo(s*0.75, s*0.35);  ctx.lineTo(s*0.75, s*0.42);
-        ctx.lineTo(s*0.3, s*0.25);
-        ctx.lineTo(s*0.35, s*0.7);   ctx.lineTo(s*0.5, s*0.9);
-        ctx.lineTo(s*0.45, s*0.95);  ctx.lineTo(0, s*0.6);
-        ctx.lineTo(-s*0.45, s*0.95); ctx.lineTo(-s*0.5, s*0.9);
-        ctx.lineTo(-s*0.35, s*0.7);
-        ctx.lineTo(-s*0.3, s*0.25);
-        ctx.lineTo(-s*0.75, s*0.42); ctx.lineTo(-s*0.75, s*0.35);
-        ctx.lineTo(-s*0.15, -s*0.3);
+        ctx.lineTo(s*0.08, -s*0.5);
+        ctx.lineTo(s*0.3, -s*0.35);  ctx.lineTo(s*0.3, -s*0.28);  // canard
+        ctx.lineTo(s*0.1, -s*0.32);
+        ctx.lineTo(s*0.85, s*0.5);   ctx.lineTo(s*0.85, s*0.58);  // delta wingtip
+        ctx.lineTo(s*0.2, s*0.25);
+        ctx.lineTo(s*0.25, s*0.75);  ctx.lineTo(s*0.45, s*0.95);  // twin tail
+        ctx.lineTo(s*0.35, s*0.95);  ctx.lineTo(0, s*0.6);
+        ctx.lineTo(-s*0.35, s*0.95); ctx.lineTo(-s*0.45, s*0.95);
+        ctx.lineTo(-s*0.25, s*0.75);
+        ctx.lineTo(-s*0.2, s*0.25);
+        ctx.lineTo(-s*0.85, s*0.58); ctx.lineTo(-s*0.85, s*0.5);
+        ctx.lineTo(-s*0.1, -s*0.32);
+        ctx.lineTo(-s*0.3, -s*0.28); ctx.lineTo(-s*0.3, -s*0.35);
+        ctx.lineTo(-s*0.08, -s*0.5);
         ctx.closePath();
       },
       uav(s) {
@@ -755,18 +759,18 @@
         ctx.closePath();
       },
       jet(s) {
-        // Default jet (generic swept wing)
+        // Default: commercial airliner shape (since most traffic is commercial)
         ctx.beginPath();
         ctx.moveTo(0, -s);
         ctx.lineTo(s*0.15, -s*0.3);
-        ctx.lineTo(s*0.8, s*0.05);   ctx.lineTo(s*0.8, s*0.15);
-        ctx.lineTo(s*0.22, s*0.15);
-        ctx.lineTo(s*0.25, s*0.65);  ctx.lineTo(s*0.42, s*0.8);
-        ctx.lineTo(s*0.42, s*0.9);   ctx.lineTo(0, s*0.7);
-        ctx.lineTo(-s*0.42, s*0.9);  ctx.lineTo(-s*0.42, s*0.8);
-        ctx.lineTo(-s*0.25, s*0.65);
-        ctx.lineTo(-s*0.22, s*0.15);
-        ctx.lineTo(-s*0.8, s*0.15);  ctx.lineTo(-s*0.8, s*0.05);
+        ctx.lineTo(s*0.85, s*0.05);  ctx.lineTo(s*0.85, s*0.15);
+        ctx.lineTo(s*0.25, s*0.15);
+        ctx.lineTo(s*0.3, s*0.65);   ctx.lineTo(s*0.45, s*0.8);
+        ctx.lineTo(s*0.45, s*0.9);   ctx.lineTo(0, s*0.7);
+        ctx.lineTo(-s*0.45, s*0.9);  ctx.lineTo(-s*0.45, s*0.8);
+        ctx.lineTo(-s*0.3, s*0.65);
+        ctx.lineTo(-s*0.25, s*0.15);
+        ctx.lineTo(-s*0.85, s*0.15); ctx.lineTo(-s*0.85, s*0.05);
         ctx.lineTo(-s*0.15, -s*0.3);
         ctx.closePath();
       },
