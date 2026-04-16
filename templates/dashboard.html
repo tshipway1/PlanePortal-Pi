@@ -568,228 +568,59 @@
     ctx.fillStyle = '#F0F7F9';
     ctx.beginPath(); ctx.arc(CX, CY, 5, 0, Math.PI * 2); ctx.fill();
 
-    // ── Aircraft icon paths (all drawn pointing UP at heading 0°) ──
-    const icons = {
-      heavy(s) {
-        // 4-engine widebody (747/A380 style): wide swept wings, 4 engine pods
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.15, -s*0.4);
-        ctx.lineTo(s*0.95, s*0.05);  ctx.lineTo(s*0.95, s*0.15);
-        ctx.lineTo(s*0.3, s*0.15);
-        ctx.lineTo(s*0.35, s*0.7);   ctx.lineTo(s*0.55, s*0.85);
-        ctx.lineTo(s*0.55, s*0.95);  ctx.lineTo(0, s*0.75);
-        ctx.lineTo(-s*0.55, s*0.95); ctx.lineTo(-s*0.55, s*0.85);
-        ctx.lineTo(-s*0.35, s*0.7);
-        ctx.lineTo(-s*0.3, s*0.15);
-        ctx.lineTo(-s*0.95, s*0.15); ctx.lineTo(-s*0.95, s*0.05);
-        ctx.lineTo(-s*0.15, -s*0.4);
-        ctx.closePath();
-      },
-      airliner(s) {
-        // Narrowbody (737/A320 style): swept wings, 2 engines
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.15, -s*0.3);
-        ctx.lineTo(s*0.85, s*0.05);  ctx.lineTo(s*0.85, s*0.15);
-        ctx.lineTo(s*0.25, s*0.15);
-        ctx.lineTo(s*0.3, s*0.65);   ctx.lineTo(s*0.45, s*0.8);
-        ctx.lineTo(s*0.45, s*0.9);   ctx.lineTo(0, s*0.7);
-        ctx.lineTo(-s*0.45, s*0.9);  ctx.lineTo(-s*0.45, s*0.8);
-        ctx.lineTo(-s*0.3, s*0.65);
-        ctx.lineTo(-s*0.25, s*0.15);
-        ctx.lineTo(-s*0.85, s*0.15); ctx.lineTo(-s*0.85, s*0.05);
-        ctx.lineTo(-s*0.15, -s*0.3);
-        ctx.closePath();
-      },
-      regional(s) {
-        // Regional jet (CRJ/ERJ style): shorter, T-tail
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.12, -s*0.3);
-        ctx.lineTo(s*0.7, s*0.0);    ctx.lineTo(s*0.7, s*0.1);
-        ctx.lineTo(s*0.18, s*0.12);
-        ctx.lineTo(s*0.18, s*0.6);   ctx.lineTo(s*0.4, s*0.75);
-        ctx.lineTo(s*0.4, s*0.85);   ctx.lineTo(0, s*0.68);
-        ctx.lineTo(-s*0.4, s*0.85);  ctx.lineTo(-s*0.4, s*0.75);
-        ctx.lineTo(-s*0.18, s*0.6);
-        ctx.lineTo(-s*0.18, s*0.12);
-        ctx.lineTo(-s*0.7, s*0.1);   ctx.lineTo(-s*0.7, s*0.0);
-        ctx.lineTo(-s*0.12, -s*0.3);
-        ctx.closePath();
-      },
-      bizjet(s) {
-        // Business jet (Gulfstream/Citation style): sleek, swept, T-tail
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.1, -s*0.35);
-        ctx.lineTo(s*0.65, -s*0.05); ctx.lineTo(s*0.65, s*0.05);
-        ctx.lineTo(s*0.15, s*0.08);
-        ctx.lineTo(s*0.15, s*0.55);  ctx.lineTo(s*0.35, s*0.72);
-        ctx.lineTo(s*0.35, s*0.82);  ctx.lineTo(0, s*0.65);
-        ctx.lineTo(-s*0.35, s*0.82); ctx.lineTo(-s*0.35, s*0.72);
-        ctx.lineTo(-s*0.15, s*0.55);
-        ctx.lineTo(-s*0.15, s*0.08);
-        ctx.lineTo(-s*0.65, s*0.05); ctx.lineTo(-s*0.65, -s*0.05);
-        ctx.lineTo(-s*0.1, -s*0.35);
-        ctx.closePath();
-      },
-      turboprop(s) {
-        // Turboprop (ATR/Dash-8 style): high straight wings
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.12, -s*0.25);
-        ctx.lineTo(s*0.9, -s*0.15);  ctx.lineTo(s*0.9, -s*0.05);
-        ctx.lineTo(s*0.15, s*0.05);
-        ctx.lineTo(s*0.15, s*0.55);  ctx.lineTo(s*0.4, s*0.7);
-        ctx.lineTo(s*0.4, s*0.8);    ctx.lineTo(0, s*0.65);
-        ctx.lineTo(-s*0.4, s*0.8);   ctx.lineTo(-s*0.4, s*0.7);
-        ctx.lineTo(-s*0.15, s*0.55);
-        ctx.lineTo(-s*0.15, s*0.05);
-        ctx.lineTo(-s*0.9, -s*0.05); ctx.lineTo(-s*0.9, -s*0.15);
-        ctx.lineTo(-s*0.12, -s*0.25);
-        ctx.closePath();
-      },
-      light(s) {
-        // Light single-engine (Cessna style): high straight wings, narrow
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.1, -s*0.2);
-        ctx.lineTo(s*0.95, -s*0.12); ctx.lineTo(s*0.95, -s*0.02);
-        ctx.lineTo(s*0.1, s*0.08);
-        ctx.lineTo(s*0.1, s*0.55);   ctx.lineTo(s*0.35, s*0.7);
-        ctx.lineTo(s*0.35, s*0.8);   ctx.lineTo(0, s*0.65);
-        ctx.lineTo(-s*0.35, s*0.8);  ctx.lineTo(-s*0.35, s*0.7);
-        ctx.lineTo(-s*0.1, s*0.55);
-        ctx.lineTo(-s*0.1, s*0.08);
-        ctx.lineTo(-s*0.95, -s*0.02);ctx.lineTo(-s*0.95, -s*0.12);
-        ctx.lineTo(-s*0.1, -s*0.2);
-        ctx.closePath();
-      },
-      twin(s) {
-        // Twin prop (Baron/King Air style): straight wings, wider body
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.15, -s*0.2);
-        ctx.lineTo(s*0.9, -s*0.1);   ctx.lineTo(s*0.9, s*0.02);
-        ctx.lineTo(s*0.18, s*0.1);
-        ctx.lineTo(s*0.18, s*0.55);  ctx.lineTo(s*0.38, s*0.72);
-        ctx.lineTo(s*0.38, s*0.82);  ctx.lineTo(0, s*0.65);
-        ctx.lineTo(-s*0.38, s*0.82); ctx.lineTo(-s*0.38, s*0.72);
-        ctx.lineTo(-s*0.18, s*0.55);
-        ctx.lineTo(-s*0.18, s*0.1);
-        ctx.lineTo(-s*0.9, s*0.02);  ctx.lineTo(-s*0.9, -s*0.1);
-        ctx.lineTo(-s*0.15, -s*0.2);
-        ctx.closePath();
-      },
-      helo(s) {
-        // Helicopter: teardrop body + rotor cross
-        ctx.beginPath();
-        ctx.moveTo(0, -s*0.45);
-        ctx.lineTo(s*0.22, -s*0.1);
-        ctx.lineTo(s*0.22, s*0.3);
-        ctx.lineTo(s*0.08, s*0.55);
-        ctx.lineTo(s*0.35, s*0.8);   ctx.lineTo(s*0.35, s*0.9);
-        ctx.lineTo(0, s*0.7);
-        ctx.lineTo(-s*0.35, s*0.9);  ctx.lineTo(-s*0.35, s*0.8);
-        ctx.lineTo(-s*0.08, s*0.55);
-        ctx.lineTo(-s*0.22, s*0.3);
-        ctx.lineTo(-s*0.22, -s*0.1);
-        ctx.closePath();
-      },
-      heloRotor(s, color) {
-        // Draw rotor lines separately
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(-s*0.8, -s*0.1); ctx.lineTo(s*0.8, -s*0.1);
-        ctx.moveTo(0, -s*0.85); ctx.lineTo(0, s*0.05);
-        ctx.stroke();
-      },
-      glider(s) {
-        // Glider: very long narrow wings, slim body
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.06, -s*0.15);
-        ctx.lineTo(s*0.98, -s*0.08); ctx.lineTo(s*0.98, -s*0.02);
-        ctx.lineTo(s*0.06, s*0.08);
-        ctx.lineTo(s*0.06, s*0.6);   ctx.lineTo(s*0.25, s*0.75);
-        ctx.lineTo(s*0.25, s*0.82);  ctx.lineTo(0, s*0.7);
-        ctx.lineTo(-s*0.25, s*0.82); ctx.lineTo(-s*0.25, s*0.75);
-        ctx.lineTo(-s*0.06, s*0.6);
-        ctx.lineTo(-s*0.06, s*0.08);
-        ctx.lineTo(-s*0.98, -s*0.02);ctx.lineTo(-s*0.98, -s*0.08);
-        ctx.lineTo(-s*0.06, -s*0.15);
-        ctx.closePath();
-      },
-      military(s) {
-        // Fighter jet: sharp delta wings, narrow body, canards
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.08, -s*0.5);
-        ctx.lineTo(s*0.3, -s*0.35);  ctx.lineTo(s*0.3, -s*0.28);  // canard
-        ctx.lineTo(s*0.1, -s*0.32);
-        ctx.lineTo(s*0.85, s*0.5);   ctx.lineTo(s*0.85, s*0.58);  // delta wingtip
-        ctx.lineTo(s*0.2, s*0.25);
-        ctx.lineTo(s*0.25, s*0.75);  ctx.lineTo(s*0.45, s*0.95);  // twin tail
-        ctx.lineTo(s*0.35, s*0.95);  ctx.lineTo(0, s*0.6);
-        ctx.lineTo(-s*0.35, s*0.95); ctx.lineTo(-s*0.45, s*0.95);
-        ctx.lineTo(-s*0.25, s*0.75);
-        ctx.lineTo(-s*0.2, s*0.25);
-        ctx.lineTo(-s*0.85, s*0.58); ctx.lineTo(-s*0.85, s*0.5);
-        ctx.lineTo(-s*0.1, -s*0.32);
-        ctx.lineTo(-s*0.3, -s*0.28); ctx.lineTo(-s*0.3, -s*0.35);
-        ctx.lineTo(-s*0.08, -s*0.5);
-        ctx.closePath();
-      },
-      uav(s) {
-        // UAV/drone: long thin wings, V-tail
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.08, -s*0.2);
-        ctx.lineTo(s*0.85, -s*0.05); ctx.lineTo(s*0.85, s*0.02);
-        ctx.lineTo(s*0.08, s*0.1);
-        ctx.lineTo(s*0.08, s*0.5);   ctx.lineTo(s*0.3, s*0.85);
-        ctx.lineTo(0, s*0.6);
-        ctx.lineTo(-s*0.3, s*0.85);
-        ctx.lineTo(-s*0.08, s*0.5);
-        ctx.lineTo(-s*0.08, s*0.1);
-        ctx.lineTo(-s*0.85, s*0.02); ctx.lineTo(-s*0.85, -s*0.05);
-        ctx.lineTo(-s*0.08, -s*0.2);
-        ctx.closePath();
-      },
-      jet(s) {
-        // Default: commercial airliner shape (since most traffic is commercial)
-        ctx.beginPath();
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s*0.15, -s*0.3);
-        ctx.lineTo(s*0.85, s*0.05);  ctx.lineTo(s*0.85, s*0.15);
-        ctx.lineTo(s*0.25, s*0.15);
-        ctx.lineTo(s*0.3, s*0.65);   ctx.lineTo(s*0.45, s*0.8);
-        ctx.lineTo(s*0.45, s*0.9);   ctx.lineTo(0, s*0.7);
-        ctx.lineTo(-s*0.45, s*0.9);  ctx.lineTo(-s*0.45, s*0.8);
-        ctx.lineTo(-s*0.3, s*0.65);
-        ctx.lineTo(-s*0.25, s*0.15);
-        ctx.lineTo(-s*0.85, s*0.15); ctx.lineTo(-s*0.85, s*0.05);
-        ctx.lineTo(-s*0.15, -s*0.3);
-        ctx.closePath();
-      },
-    };
+    // ── SVG aircraft icon system ────────────────────────────
+    const ICON_TYPES = ['airliner','cessna','heavy_2e','heavy_4e','helicopter',
+                        'hi_perf','jet_nonswept','jet_swept','twin_large','twin_small','unknown'];
+    const svgImages = {};     // type → loaded Image
+    const iconCache = {};     // type_color_size → offscreen canvas
+    let iconsReady = false;
 
-    function drawAircraftIcon(px, py, heading, icon, color, size, strokeColor, strokeWidth) {
+    // Pre-load all SVG images
+    let loadCount = 0;
+    ICON_TYPES.forEach(t => {
+      const img = new Image();
+      img.onload = function() {
+        svgImages[t] = img;
+        loadCount++;
+        if (loadCount >= ICON_TYPES.length) iconsReady = true;
+      };
+      img.src = '/static/icons/' + t + '.svg';
+    });
+
+    function getColoredIcon(type, color, size) {
+      const key = type + '_' + color + '_' + size;
+      if (iconCache[key]) return iconCache[key];
+      const baseImg = svgImages[type] || svgImages['airliner'];
+      if (!baseImg) return null;
+      const oc = document.createElement('canvas');
+      oc.width = size; oc.height = size;
+      const octx = oc.getContext('2d');
+      octx.drawImage(baseImg, 0, 0, size, size);
+      octx.globalCompositeOperation = 'source-in';
+      octx.fillStyle = color;
+      octx.fillRect(0, 0, size, size);
+      iconCache[key] = oc;
+      return oc;
+    }
+
+    function drawAircraftSVG(px, py, heading, type, color, size, strokeColor) {
+      const icon = getColoredIcon(type, color, size);
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(heading * Math.PI / 180);
-      ctx.fillStyle = color;
-      const drawFn = icons[icon] || icons.jet;
-      drawFn(size);
-      ctx.fill();
-      if (strokeColor) {
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = strokeWidth || 2;
-        ctx.stroke();
+      if (icon) {
+        ctx.drawImage(icon, -size/2, -size/2, size, size);
+      } else {
+        // Fallback dot while SVG loads
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(0, 0, size/3, 0, Math.PI*2); ctx.fill();
       }
-      if (icon === 'helo') icons.heloRotor(size, color);
+      if (strokeColor) {
+        // Draw a highlight ring for featured
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, size/2 + 2, 0, Math.PI*2); ctx.stroke();
+      }
       ctx.restore();
     }
 
@@ -803,22 +634,22 @@
       if (pt.icao24) radarHits.push({icao24: pt.icao24, px, py});
 
       const isFeatured = pinnedIcao ? (pt.icao24 === pinnedIcao) : pt.is_featured;
-      const icon = pt.icon || 'jet';
+      const icon = pt.icon || 'airliner';
       if (isFeatured) {
-        drawAircraftIcon(px, py, pt.heading, icon, altColor(pt.altitude_ft), 14, '#E3655B', 3);
+        drawAircraftSVG(px, py, pt.heading, icon, altColor(pt.altitude_ft), 30, '#E3655B');
         ctx.fillStyle = '#F0F7F9';
         ctx.font = 'bold 13px monospace';
         ctx.textAlign = 'left';
-        ctx.fillText(pt.callsign, px + 16, py + 5);
+        ctx.fillText(pt.callsign, px + 18, py + 5);
       } else if (pt.notable_tag) {
-        drawAircraftIcon(px, py, pt.heading, icon, pt.notable_color || '#F3BE4E', 10, null, 0);
+        drawAircraftSVG(px, py, pt.heading, icon, pt.notable_color || '#F3BE4E', 22, null);
         ctx.fillStyle = pt.notable_color || '#F3BE4E';
         ctx.font = 'bold 10px monospace';
         ctx.textAlign = 'left';
-        ctx.fillText(pt.notable_tag, px + 12, py + 4);
+        ctx.fillText(pt.notable_tag, px + 14, py + 4);
       } else {
         const color = pt.is_live ? altColor(pt.altitude_ft) : '#95A9B5';
-        drawAircraftIcon(px, py, pt.heading, icon, color, 9, null, 0);
+        drawAircraftSVG(px, py, pt.heading, icon, color, 20, null);
       }
     }
   }

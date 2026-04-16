@@ -296,11 +296,11 @@ class PlanePortalServer:
         """Pick a radar icon type based on category + enrichment data."""
         cat = record.get("category_name", "")
         if cat == "Rotorcraft":
-            return "helo"
+            return "helicopter"
         if cat == "Glider":
-            return "glider"
+            return "cessna"
         if cat == "UAV":
-            return "uav"
+            return "hi_perf"
 
         # Try enrichment aircraft type
         enrichment = record.get("enrichment") or {}
@@ -311,43 +311,43 @@ class PlanePortalServer:
             # Guess from callsign: N-numbers starting with N are often GA
             cs = record.get("callsign", "")
             if cs.startswith("N") and any(c.isdigit() for c in cs[1:4]):
-                return "light"
+                return "cessna"
             if cat == "Light aircraft":
-                return "light"
-            return "jet"  # default
+                return "cessna"
+            return "airliner"  # default — most traffic is commercial
 
         for t in self._HELO_TYPES:
             if t in atype:
-                return "helo"
+                return "helicopter"
         for t in self._MILITARY_TYPES:
             if t in atype:
-                return "military"
+                return "hi_perf"
         for t in self._WIDEBODY:
             if t in atype:
-                return "heavy"
+                return "heavy_2e"
         for t in self._NARROWBODY:
             if t in atype:
                 return "airliner"
         for t in self._REGIONAL_JET:
             if t in atype:
-                return "regional"
+                return "jet_swept"
         for t in self._BIZJET:
             if t in atype:
-                return "bizjet"
+                return "jet_nonswept"
         for t in self._TURBOPROP:
             if t in atype:
-                return "turboprop"
+                return "twin_large"
         for t in self._TWIN_PROP:
             if t in atype:
-                return "twin"
+                return "twin_small"
         for t in self._LIGHT_PROP:
             if t in atype:
-                return "light"
+                return "cessna"
         if cat == "Light aircraft":
-            return "light"
+            return "cessna"
         if cat == "Heavy aircraft":
-            return "heavy"
-        return "jet"
+            return "heavy_4e"
+        return "airliner"
 
     # Callsign prefixes that indicate military or government aircraft
     _MILITARY_PREFIXES = (
