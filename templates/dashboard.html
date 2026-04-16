@@ -817,7 +817,7 @@
     document.getElementById('wxWind').textContent = windDir + ' ' + windSpd + gust;
     const visMi = wx.visibility_m != null ? wx.visibility_m / 1609.34 : null;
     document.getElementById('wxVis').textContent =
-      visMi != null ? (visMi >= 6 ? '>6mi' : visMi.toFixed(1) + 'mi') : '--';
+      visMi != null ? (visMi >= 6 ? '>6 mi' : visMi.toFixed(1) + ' mi') : '--';
     const cc = wx.cloud_cover_pct;
     document.getElementById('wxClouds').textContent =
       cc == null ? '--' : cc <= 10 ? 'Clear' : cc <= 30 ? 'Few' : cc <= 60 ? 'Scattered' : cc <= 85 ? 'Broken' : 'Overcast';
