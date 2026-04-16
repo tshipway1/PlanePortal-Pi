@@ -90,6 +90,7 @@ class PlanePortalServer:
                         "callsign": record["callsign"],
                         "icao24": record["icao24"],
                         "category": record["category_name"],
+                        "icon": self._pick_icon(record),
                         "notable_tag": serialized["notable_tag"] if serialized else None,
                         "notable_color": serialized["notable_color"] if serialized else None,
                     }
@@ -215,6 +216,130 @@ class PlanePortalServer:
             threading.Thread(target=_restart, daemon=True).start()
 
             return jsonify({"status": "saved", "restarting": True})
+
+    # ── Icon type patterns ────────────────────────────────────
+    # Widebody / heavy
+    _WIDEBODY = (
+        "A330", "A340", "A350", "A380",
+        "B747", "747", "B767", "767", "B777", "777", "B787", "787",
+        "MD11", "MD-11", "DC10", "DC-10", "IL96", "A300", "A310",
+        "L101", "L-1011",
+    )
+    # Narrowbody jet
+    _NARROWBODY = (
+        "A319", "A320", "A321", "A220",
+        "B737", "737", "B757", "757", "MD80", "MD-80", "MD90", "MD-90",
+        "DC9", "DC-9", "717", "B717", "TU204", "TU154",
+    )
+    # Regional jet
+    _REGIONAL_JET = (
+        "CRJ", "ERJ", "EMB-", "E170", "E175", "E190", "E195",
+        "F100", "F70", "BAE146", "RJ85", "ARJ",
+    )
+    # Turboprop / regional prop
+    _TURBOPROP = (
+        "ATR", "DH8", "DHC-8", "Q400", "SAAB", "SF340", "J31", "J41",
+        "DO328", "AN24", "AN26", "C-130", "C130", "L-100", "P-3",
+        "BE20", "B190", "EMB-120",
+    )
+    # Light prop / GA single engine
+    _LIGHT_PROP = (
+        "C172", "C182", "C206", "C152", "C150", "C210", "C177",
+        "PA28", "PA32", "PA24", "PA18", "PA22",
+        "SR20", "SR22", "DA40", "DA42", "DA62",
+        "TB20", "TB21", "DR40", "RV-", "VENT", "LANCAIR",
+        "M20", "BE35", "BE33",
+    )
+    # Twin prop / GA multi engine
+    _TWIN_PROP = (
+        "BE58", "BE55", "BE36", "PA34", "PA44", "PA31",
+        "C310", "C340", "C402", "C414", "C421", "C441",
+        "DA62",
+    )
+    # Business jet
+    _BIZJET = (
+        "LJ", "LEAR", "C525", "C550", "C560", "C680", "C700",
+        "CL30", "CL35", "CL60", "GL5T", "GL7T", "GLEX",
+        "GLF", "G280", "G550", "G650", "GV", "GIV", "GIII",
+        "FA7X", "FA8X", "FA50", "FA90", "F900", "F2TH",
+        "H25", "HA4T", "ASTR", "GALX",
+        "PC12", "PC24", "TBM",
+        "E50P", "E55P", "EA50", "PRM1", "HDJT",
+    )
+    # Military
+    _MILITARY_TYPES = (
+        "C-17", "C-5", "C-40", "KC-135", "KC-10", "KC-46",
+        "F-16", "F-15", "F-18", "F-22", "F-35",
+        "B-52", "B-1B", "B-2", "E-3", "E-6", "P-8",
+        "V-22", "CV-22", "MQ-9", "RQ-4",
+        "A-10", "T-38", "T-6",
+    )
+    # Helicopter types
+    _HELO_TYPES = (
+        "R22", "R44", "R66", "EC", "H125", "H130", "H135",
+        "H145", "H155", "H160", "H175", "H215", "H225",
+        "AS35", "AS50", "AS65", "A109", "A119", "A139", "A169",
+        "S76", "S92", "S70", "UH-60", "AH-64", "CH-47",
+        "MH-60", "B06", "B07", "B47", "B222", "B230", "B412",
+        "MD5", "MD6", "B505", "SW4",
+    )
+
+    def _pick_icon(self, record):
+        """Pick a radar icon type based on category + enrichment data."""
+        cat = record.get("category_name", "")
+        if cat == "Rotorcraft":
+            return "helo"
+        if cat == "Glider":
+            return "glider"
+        if cat == "UAV":
+            return "uav"
+
+        # Try enrichment aircraft type
+        enrichment = record.get("enrichment") or {}
+        aircraft = enrichment.get("aircraft") or {}
+        atype = (aircraft.get("type") or aircraft.get("icao_type") or "").upper()
+
+        if not atype:
+            # Guess from callsign: N-numbers starting with N are often GA
+            cs = record.get("callsign", "")
+            if cs.startswith("N") and any(c.isdigit() for c in cs[1:4]):
+                return "light"
+            if cat == "Light aircraft":
+                return "light"
+            return "jet"  # default
+
+        for t in self._HELO_TYPES:
+            if t in atype:
+                return "helo"
+        for t in self._MILITARY_TYPES:
+            if t in atype:
+                return "military"
+        for t in self._WIDEBODY:
+            if t in atype:
+                return "heavy"
+        for t in self._NARROWBODY:
+            if t in atype:
+                return "airliner"
+        for t in self._REGIONAL_JET:
+            if t in atype:
+                return "regional"
+        for t in self._BIZJET:
+            if t in atype:
+                return "bizjet"
+        for t in self._TURBOPROP:
+            if t in atype:
+                return "turboprop"
+        for t in self._TWIN_PROP:
+            if t in atype:
+                return "twin"
+        for t in self._LIGHT_PROP:
+            if t in atype:
+                return "light"
+        if cat == "Light aircraft":
+            return "light"
+        if cat == "Heavy aircraft":
+            return "heavy"
+        return "jet"
 
     # Callsign prefixes that indicate military or government aircraft
     _MILITARY_PREFIXES = (
