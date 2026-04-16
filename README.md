@@ -1,144 +1,157 @@
-# Plane Portal
+# Plane Portal Pi
 
-CircuitPython application for an Adafruit PyPortal that watches a fixed circular area around a configured center point, remembers aircraft seen in the last few minutes, and shows the most relevant nearby planes on the display.
+Real-time aircraft tracking dashboard for Raspberry Pi with a 7" display.
+
+Ported from the original [PlanePortal](https://github.com/kevinl95/PlanePortal) CircuitPython project for Adafruit PyPortal. This version runs on a Raspberry Pi as a Flask web app displayed in fullscreen Chromium kiosk mode — designed for an 800x480 screen.
 
 ## What it does
 
-- Polls OpenSky for live aircraft state vectors near a configured watch point
-- Applies a true circular radius filter on-device, defaulting to 3 miles
-- Keeps a rolling recent-aircraft memory so a plane can remain visible after it passes through the radius
-- Enriches the most relevant aircraft with ADSBDB metadata such as registration, aircraft type, airline, and route when available
-- Renders a compact aviation-style dashboard for the PyPortal's 320x240 display, including a mini radar view, status badges, and a recent-traffic column
+- Polls OpenSky Network for live aircraft state vectors near a configured watch point
+- Applies a true circular radius filter, defaulting to 3 miles
+- Keeps a rolling recent-aircraft memory so planes remain visible after passing through the radius
+- Enriches aircraft with ADSBDB metadata: registration, aircraft type, airline, and route
+- Renders an aviation-style dashboard with a live radar view, featured aircraft card, metrics, and a recent-traffic sidebar
+- Auto-refreshes via AJAX — no page reloads needed
 
 ## What the screen shows
 
-- Top bar: app title, source status, and IP / source summary
-- Left radar tile: nearby aircraft plotted by bearing and relative distance from your configured watch point
-- Featured aircraft card: callsign, route, type / operator, distance, altitude, speed, heading, and vertical trend
-- Status badges: live/recent state and climb/descent trend
-- Right column: compact recent / nearby aircraft list
-- Footer: refresh summary plus non-fatal notes such as delayed enrichment
+- **Header**: app title, live/stale status indicator, data source
+- **Radar panel** (left): aircraft plotted by bearing and distance, color-coded by altitude
+- **Featured aircraft card** (center): callsign, type, route, operator, distance, altitude, speed, heading, vertical rate, and climb/descent trend
+- **Recent sidebar** (right): other nearby aircraft with key details
+- **Footer**: live/recent counts and status notes
 
-Quiet-state behavior:
+### Altitude color coding
 
-- Before the app has ever seen a nearby aircraft, the status panel says `Waiting for first nearby aircraft`
-- After aircraft have been seen and later leave the radius / recent window, the status panel switches to a quiet-sky message instead of pretending the app has never seen any traffic
+| Color | Altitude |
+|-------|----------|
+| Orange | Below 12,000 ft |
+| Teal | 12,000 - 28,000 ft |
+| Light blue | Above 28,000 ft |
 
-## Screen legend
+## Hardware needed
 
-Featured card abbreviations:
+- Raspberry Pi (3B+, 4, 5, or Zero 2W all work)
+- 7" display — the official Raspberry Pi touchscreen (800x480) or any HDMI 7" display
+- WiFi or Ethernet connection
+- SD card with Raspberry Pi OS (Desktop edition)
 
-- `LIVE` / `RECE`: the aircraft is live in the current refresh or only recently seen
-- `CLB` / `DSC` / `LVL`: climbing, descending, or roughly level
-- `MI`: miles from the configured watch point
-- `KFT`: altitude in thousands of feet
-- `KT`: speed in knots
-- `BRG`: bearing from the watch point to the aircraft
-- `HDG`: aircraft heading
-- `VS`: vertical speed in feet per minute
+No GPIO wiring, no special hardware. Just power, display, and network.
 
-Route and metadata fallbacks:
+## Quick start
 
-- If route enrichment succeeds, the route is shown as a compact badge such as `SEA>SFO`
-- If no route could be resolved, the app shows `NO ROUTE`
-- If no specific aircraft type could be resolved, the app falls back to a broader aircraft category
+### 1. Clone and set up
 
-## Current implementation status
+```bash
+git clone https://github.com/tshipway1/PlanePortal-Pi.git
+cd PlanePortal-Pi
+chmod +x setup-pi.sh
+./setup-pi.sh
+```
 
-This is the first implementation pass.
+The setup script installs Python dependencies in a virtual environment, creates a systemd service, and configures kiosk-mode autostart.
 
-- Live OpenSky polling: implemented
-- Local recent-flight memory: implemented
-- ADSBDB enrichment: implemented
-- Radar-style live display: implemented
-- Altitude color coding and compact status badges: implemented
-- Experimental image support: removed in favor of a cleaner radar-first display
+### 2. Configure
 
-## Required CircuitPython libraries
+```bash
+cp .env.example .env
+nano .env
+```
 
-Copy these libraries from the matching Adafruit CircuitPython bundle into `CIRCUITPY/lib`:
+Required settings:
 
-- `adafruit_connection_manager.mpy`
-- `adafruit_requests.mpy`
-- `adafruit_display_text/`
-- `adafruit_esp32spi/`
-
-The project uses built-in `board`, `displayio`, and `terminalio`, so no extra font or image assets are required for the initial version.
-
-## Device setup
-
-1. Install CircuitPython on the PyPortal.
-2. Copy the required libraries into `CIRCUITPY/lib`.
-3. Copy [code.py](code.py) and the [app](app) folder to the root of `CIRCUITPY`.
-4. Copy [settings.toml.example](settings.toml.example) to `settings.toml` on `CIRCUITPY` and fill in your values.
-5. Reset the board.
-
-If the app fails during boot or refresh, open the serial console to read lines beginning with `Plane Portal error:`.
-
-## Configuration
-
-The app reads configuration from `settings.toml`.
-
-Required:
-
-- `CIRCUITPY_WIFI_SSID`
-- `CIRCUITPY_WIFI_PASSWORD`
-- `PLANEPORTAL_HOME_LATITUDE`
-- `PLANEPORTAL_HOME_LONGITUDE`
-
-These existing key names are kept for compatibility, but they represent the app's watch point or center point, not necessarily a home location.
+- `PLANEPORTAL_HOME_LATITUDE` — your watch-point latitude (decimal degrees)
+- `PLANEPORTAL_HOME_LONGITUDE` — your watch-point longitude (decimal degrees)
 
 Recommended:
 
-- `OPENSKY_CLIENT_ID`
-- `OPENSKY_CLIENT_SECRET`
+- `OPENSKY_CLIENT_ID` — OpenSky Network API client ID
+- `OPENSKY_CLIENT_SECRET` — OpenSky Network API client secret
 
-Optional:
+Register for free at [opensky-network.org](https://opensky-network.org/) for higher rate limits.
 
-- `PLANEPORTAL_RADIUS_MILES`
-- `PLANEPORTAL_REFRESH_SECONDS`
-- `PLANEPORTAL_RECENT_WINDOW_MINUTES`
-- `PLANEPORTAL_ENRICHMENT_LIMIT`
-- `PLANEPORTAL_ADSB_CACHE_SECONDS`
-- `PLANEPORTAL_DEBUG`
+Optional settings (with defaults):
 
-Notes:
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `PLANEPORTAL_RADIUS_MILES` | 3 | Search radius in miles |
+| `PLANEPORTAL_REFRESH_SECONDS` | 120 | Seconds between API polls |
+| `PLANEPORTAL_RECENT_WINDOW_MINUTES` | 10 | How long to remember aircraft |
+| `PLANEPORTAL_ENRICHMENT_LIMIT` | 4 | Max aircraft to enrich per cycle |
+| `PLANEPORTAL_ADSB_CACHE_SECONDS` | 1800 | Metadata cache TTL |
+| `PORT` | 5000 | Web server port |
 
-- `settings.toml` does not support float literals, so latitude, longitude, and radius should be stored as quoted strings.
-- Without OpenSky credentials the app still works in anonymous mode, but with lower rate limits.
-- OpenSky supplies the live aircraft position and movement data: callsign, location, altitude, speed, heading, vertical rate, and broad aircraft category.
-- ADSBDB supplies best-effort aircraft metadata such as specific type, registration, route, airline, and operator.
-- The current default recent window is 10 minutes.
+### 3. Start
 
-Minimal example:
+```bash
+# Start the service
+sudo systemctl start planeportal
 
-```toml
-CIRCUITPY_WIFI_SSID = "your_wifi_name"
-CIRCUITPY_WIFI_PASSWORD = "your_wifi_password"
+# Check status
+sudo systemctl status planeportal
 
-PLANEPORTAL_HOME_LATITUDE = "47.6062"
-PLANEPORTAL_HOME_LONGITUDE = "-122.3321"
-
-PLANEPORTAL_RADIUS_MILES = "3"
-PLANEPORTAL_REFRESH_SECONDS = 120
-PLANEPORTAL_RECENT_WINDOW_MINUTES = 10
+# View logs
+journalctl -u planeportal -f
 ```
 
-## Known limitations
+Open `http://localhost:5000` in a browser, or reboot the Pi for automatic kiosk-mode display.
 
-- OpenSky now uses OAuth2 client credentials, so valid OpenSky API credentials are strongly recommended.
-- The "recently overhead" list is maintained locally from prior refreshes. It is not historical flight data pulled from the API.
-- ADSBDB metadata is best-effort only. Some aircraft have no route information or type details.
-- The app intentionally does not attempt aircraft photo rendering on-device.
-- Some live fields can be present even when route/type enrichment is missing, so the featured aircraft may still render with partial metadata.
+### Manual run (without systemd)
 
-## File layout
+```bash
+source venv/bin/activate
+python run.py
+```
 
-- [code.py](code.py): top-level CircuitPython entrypoint
-- [app/config.py](app/config.py): settings parsing and defaults
-- [app/network.py](app/network.py): PyPortal WiFi session management
-- [app/opensky_client.py](app/opensky_client.py): OpenSky OAuth and live aircraft fetches
-- [app/adsbdb_client.py](app/adsbdb_client.py): ADSBDB enrichment and caching
-- [app/tracker.py](app/tracker.py): radius filtering, distance math, and recent-flight tracking
-- [app/ui.py](app/ui.py): display layout and rendering
-- [app/main.py](app/main.py): application loop
+## How it works
+
+The app runs a Flask web server with a background thread that periodically polls the OpenSky Network API. The frontend is a single HTML page that polls a `/api/snapshot` JSON endpoint every 5 seconds and renders everything client-side with vanilla JavaScript and Canvas.
+
+### Architecture
+
+```
+run.py                  <- Entry point: loads .env, starts Flask
+app/
+  server.py             <- Flask app, background fetch loop, JSON API
+  config.py             <- Reads settings from environment variables
+  opensky_client.py     <- OpenSky OAuth2 + state vector fetching
+  adsbdb_client.py      <- Aircraft metadata enrichment + caching
+  tracker.py            <- Radius filtering, distance math, flight registry
+templates/
+  dashboard.html        <- Full dashboard UI (HTML + CSS + JS)
+```
+
+### Data sources
+
+- **OpenSky Network** — live aircraft positions, altitude, speed, heading, vertical rate
+- **ADSBDB** — aircraft registration, type, route, airline, operator (best-effort)
+
+## Differences from original PlanePortal
+
+| | Original (PyPortal) | Pi Version |
+|---|---|---|
+| Platform | CircuitPython on Adafruit PyPortal | Python 3 on Raspberry Pi OS |
+| Display | 320x240 built-in LCD | 800x480 (7" Pi screen) |
+| UI | CircuitPython displayio | Flask + HTML/CSS/Canvas |
+| Networking | ESP32 SPI WiFi | Native WiFi/Ethernet |
+| Rendering | Bitmap pixel drawing | Canvas radar + DOM layout |
+| Access | Device-only | Any browser on the network |
+
+## Troubleshooting
+
+**No aircraft showing up?**
+- Verify your latitude/longitude in `.env` are correct
+- Try increasing `PLANEPORTAL_RADIUS_MILES` to 5 or 10
+- Check that OpenSky API is reachable: `curl https://opensky-network.org/api/states/all?lamin=47&lomin=-123&lamax=48&lomax=-122`
+
+**Rate limited?**
+- Register for OpenSky API credentials (free) and add them to `.env`
+- Increase `PLANEPORTAL_REFRESH_SECONDS` to 180 or higher
+
+**Screen not filling the display?**
+- Chromium kiosk mode should handle this automatically
+- If using HDMI, check `/boot/config.txt` display settings match your panel resolution
+
+## Credits
+
+Based on [PlanePortal](https://github.com/kevinl95/PlanePortal) by Kevin Loughlin.

@@ -1,19 +1,17 @@
+"""Configuration for PlanePortal Pi.
+
+Reads settings from environment variables or a .env file.
+"""
+
 import os
 
 
 def _get_string(name, default=None):
-    value = os.getenv(name)
+    value = os.environ.get(name)
     if value is None:
         return default
-
-    if isinstance(value, str):
-        value = value.strip()
-    else:
-        value = str(value).strip()
-
-    if not value:
-        return default
-    return value
+    value = str(value).strip()
+    return value if value else default
 
 
 def _get_int(name, default):
@@ -45,8 +43,6 @@ def _get_bool(name, default=False):
 
 class AppConfig:
     def __init__(self):
-        self.wifi_ssid = _get_string("CIRCUITPY_WIFI_SSID")
-        self.wifi_password = _get_string("CIRCUITPY_WIFI_PASSWORD")
         self.opensky_client_id = _get_string("OPENSKY_CLIENT_ID")
         self.opensky_client_secret = _get_string("OPENSKY_CLIENT_SECRET")
         self.home_latitude = _get_float("PLANEPORTAL_HOME_LATITUDE", 0.0)
@@ -56,7 +52,9 @@ class AppConfig:
         self.recent_window_minutes = max(
             2, _get_int("PLANEPORTAL_RECENT_WINDOW_MINUTES", 10)
         )
-        self.adsb_cache_seconds = max(300, _get_int("PLANEPORTAL_ADSB_CACHE_SECONDS", 1800))
+        self.adsb_cache_seconds = max(
+            300, _get_int("PLANEPORTAL_ADSB_CACHE_SECONDS", 1800)
+        )
         self.enrichment_limit = max(1, _get_int("PLANEPORTAL_ENRICHMENT_LIMIT", 4))
         self.debug = _get_bool("PLANEPORTAL_DEBUG", False)
 
@@ -69,10 +67,8 @@ class AppConfig:
         return bool(self.opensky_client_id and self.opensky_client_secret)
 
     def validate(self):
-        if not self.wifi_ssid or not self.wifi_password:
-            return "Add CIRCUITPY_WIFI_SSID and CIRCUITPY_WIFI_PASSWORD in settings.toml"
         if self.home_latitude == 0.0 and self.home_longitude == 0.0:
-            return "Add the watch point coordinates in settings.toml using PLANEPORTAL_HOME_LATITUDE and PLANEPORTAL_HOME_LONGITUDE"
+            return "Set PLANEPORTAL_HOME_LATITUDE and PLANEPORTAL_HOME_LONGITUDE in .env"
         return None
 
     def source_label(self):

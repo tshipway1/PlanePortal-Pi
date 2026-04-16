@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=800, height=480, initial-scale=1.0, user-scalable=no">
+<title>Plane Portal</title>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────── */
+  * { margin:0; padding:0; box-sizing:border-box; }
+  ::-webkit-scrollbar { display:none; }
+  html, body {
+    width:800px; height:480px; overflow:hidden;
+    font-family: 'Courier New', 'Liberation Mono', monospace;
+    background:#07131F; color:#F0F7F9;
+  }
+
+  /* ── Color tokens ─────────────────────────────────────── */
+  :root {
+    --bg:       #07131F;
+    --sky-band: #0E2231;
+    --card:     #102739;
+    --card-alt: #0C1E2D;
+    --accent:   #2DB5A3;
+    --accent-dim:#1D6D67;
+    --text:     #F0F7F9;
+    --text-muted:#95A9B5;
+    --warn:     #F3BE4E;
+    --error:    #E3655B;
+    --alt-low:  #F39C5A;
+    --alt-mid:  #2DB5A3;
+    --alt-high: #B7E3F5;
+  }
+
+  /* ── Layout ───────────────────────────────────────────── */
+  .dashboard {
+    display:grid; width:800px; height:480px;
+    grid-template-rows: 44px 1fr 36px;
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Header ───────────────────────────────────────────── */
+  .header {
+    background:var(--card-alt); display:flex; align-items:center;
+    padding:0 16px; gap:12px; border-bottom:2px solid var(--accent-dim);
+  }
+  .header h1 {
+    font-size:16px; letter-spacing:2px; color:var(--accent);
+    font-weight:700;
+  }
+  .header .source {
+    font-size:11px; color:var(--text-muted); margin-left:auto;
+  }
+  .status-dot {
+    width:8px; height:8px; border-radius:50%;
+    background:var(--accent); display:inline-block;
+    animation: pulse 2s infinite;
+  }
+  .status-dot.stale { background:var(--warn); animation:none; }
+  .status-dot.error { background:var(--error); animation:none; }
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:0.4; }
+  }
+
+  /* ── Main content ─────────────────────────────────────── */
+  .content {
+    display:grid; padding:8px;
+    grid-template-columns: 260px 1fr 200px;
+    gap:8px; overflow:hidden;
+  }
+
+  /* ── Radar panel (left) ───────────────────────────────── */
+  .radar-panel {
+    background:var(--sky-band); border-radius:6px;
+    display:flex; flex-direction:column; align-items:center;
+    padding:8px; position:relative;
+  }
+  .radar-title {
+    font-size:10px; color:var(--text-muted); letter-spacing:1px;
+    margin-bottom:4px;
+  }
+  .radar-container {
+    position:relative; width:240px; height:240px;
+  }
+  canvas#radar {
+    width:240px; height:240px;
+    border-radius:50%;
+  }
+  .radar-legend {
+    display:flex; gap:12px; margin-top:6px; font-size:9px;
+    color:var(--text-muted);
+  }
+  .legend-dot {
+    width:8px; height:8px; border-radius:50%;
+    display:inline-block; margin-right:3px; vertical-align:middle;
+  }
+  .radar-stats {
+    font-size:11px; color:var(--text-muted); margin-top:6px;
+    text-align:center;
+  }
+  .radar-stats span { color:var(--accent); font-weight:bold; }
+
+  /* ── Featured card (center) ───────────────────────────── */
+  .featured-panel {
+    background:var(--card); border-radius:6px; padding:12px;
+    display:flex; flex-direction:column; gap:6px; overflow:hidden;
+  }
+  .featured-header {
+    display:flex; align-items:center; gap:10px;
+  }
+  .callsign {
+    font-size:28px; font-weight:bold; color:var(--text);
+    letter-spacing:2px;
+  }
+  .badge {
+    font-size:10px; font-weight:bold; padding:2px 8px;
+    border-radius:3px; letter-spacing:1px;
+  }
+  .badge-live   { background:var(--accent); color:var(--bg); }
+  .badge-recent { background:var(--warn);   color:var(--bg); }
+  .badge-clb    { background:var(--alt-high); color:var(--bg); }
+  .badge-dsc    { background:var(--alt-low);  color:var(--bg); }
+  .badge-lvl    { background:var(--text-muted); color:var(--bg); }
+
+  .type-line {
+    font-size:13px; color:var(--text-muted);
+  }
+  .route-line {
+    font-size:16px; color:var(--accent); font-weight:bold;
+    letter-spacing:1px;
+  }
+  .route-line.no-route { color:var(--text-muted); font-size:12px; }
+  .owner-line {
+    font-size:11px; color:var(--text-muted); font-style:italic;
+  }
+
+  .metrics-grid {
+    display:grid; grid-template-columns: repeat(3, 1fr);
+    gap:6px; margin-top:4px;
+  }
+  .metric-box {
+    background:var(--card-alt); border-radius:4px;
+    padding:6px 8px; text-align:center;
+  }
+  .metric-value {
+    font-size:18px; font-weight:bold; color:var(--text);
+  }
+  .metric-label {
+    font-size:9px; color:var(--text-muted); letter-spacing:1px;
+  }
+
+  .metrics-secondary {
+    display:grid; grid-template-columns: repeat(3, 1fr);
+    gap:6px;
+  }
+  .metric-sm {
+    background:var(--card-alt); border-radius:4px;
+    padding:4px 6px; text-align:center;
+  }
+  .metric-sm .metric-value { font-size:14px; }
+  .metric-sm .metric-label { font-size:8px; }
+
+  /* ── Recent sidebar (right) ───────────────────────────── */
+  .recent-panel {
+    background:var(--card-alt); border-radius:6px;
+    padding:8px; display:flex; flex-direction:column; gap:6px;
+    overflow:hidden;
+  }
+  .recent-title {
+    font-size:10px; color:var(--text-muted); letter-spacing:1px;
+    border-bottom:1px solid var(--accent-dim); padding-bottom:4px;
+  }
+  .recent-card {
+    background:var(--card); border-radius:4px; padding:6px 8px;
+    border-left:3px solid var(--accent-dim);
+  }
+  .recent-card.live { border-left-color:var(--accent); }
+  .recent-card .rc-callsign {
+    font-size:13px; font-weight:bold; color:var(--text);
+  }
+  .recent-card .rc-detail {
+    font-size:10px; color:var(--text-muted);
+  }
+  .recent-card .rc-route {
+    font-size:10px; color:var(--accent);
+  }
+  .recent-empty {
+    font-size:11px; color:var(--text-muted); text-align:center;
+    padding:20px 0;
+  }
+
+  /* ── Footer ───────────────────────────────────────────── */
+  .footer {
+    background:var(--card-alt); display:flex; align-items:center;
+    padding:0 16px; font-size:11px; color:var(--text-muted);
+    border-top:2px solid var(--accent-dim); gap:16px;
+  }
+  .footer .detail { flex:1; }
+  .footer .refresh-note { color:var(--warn); }
+
+  /* ── Quiet / Error states ─────────────────────────────── */
+  .state-message {
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; height:100%; text-align:center;
+    gap:8px;
+  }
+  .state-message h2 {
+    font-size:20px; color:var(--warn); letter-spacing:2px;
+  }
+  .state-message p {
+    font-size:13px; color:var(--text-muted); max-width:280px;
+  }
+
+  /* ── Altitude color utility ───────────────────────────── */
+  .alt-low  { color:var(--alt-low); }
+  .alt-mid  { color:var(--alt-mid); }
+  .alt-high { color:var(--alt-high); }
+</style>
+</head>
+<body>
+<div class="dashboard">
+  <!-- Header -->
+  <div class="header">
+    <h1>PLANE PORTAL</h1>
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusLabel" style="font-size:11px;color:var(--accent);">SCANNING</span>
+    <span class="source" id="sourceLabel">{{ config.source_label() }}</span>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content" id="mainContent">
+    {% if validation_error %}
+    <div style="grid-column:1/-1;">
+      <div class="state-message">
+        <h2>CONFIG REQUIRED</h2>
+        <p>{{ validation_error }}</p>
+        <p style="font-size:11px;color:var(--text-muted);">Edit your .env file, then restart the server.</p>
+      </div>
+    </div>
+    {% else %}
+    <!-- Radar -->
+    <div class="radar-panel">
+      <div class="radar-title">RADAR &mdash; {{ config.radius_miles }} MI RADIUS</div>
+      <div class="radar-container">
+        <canvas id="radar" width="480" height="480"></canvas>
+      </div>
+      <div class="radar-legend">
+        <span><span class="legend-dot" style="background:var(--alt-low)"></span>&lt;12K</span>
+        <span><span class="legend-dot" style="background:var(--alt-mid)"></span>12-28K</span>
+        <span><span class="legend-dot" style="background:var(--alt-high)"></span>&gt;28K</span>
+        <span><span class="legend-dot" style="background:var(--error)"></span>Featured</span>
+      </div>
+      <div class="radar-stats">
+        <span id="liveCount">0</span> live &middot;
+        <span id="recentCount">0</span> recent
+      </div>
+    </div>
+
+    <!-- Featured Aircraft -->
+    <div class="featured-panel" id="featuredPanel">
+      <div class="state-message" id="waitingState">
+        <h2>SCANNING SKY</h2>
+        <p>Waiting for first nearby aircraft...</p>
+      </div>
+    </div>
+
+    <!-- Recent Aircraft Sidebar -->
+    <div class="recent-panel">
+      <div class="recent-title">RECENT SKY</div>
+      <div id="recentList">
+        <div class="recent-empty">Waiting for nearby aircraft</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="detail" id="footerDetail">Initializing...</span>
+    <span id="refreshNote"></span>
+    <span id="clock"></span>
+  </div>
+</div>
+
+{% if not validation_error %}
+<script>
+(function() {
+  const REFRESH_MS = {{ config.refresh_seconds * 1000 }};
+  const POLL_MS = 5000;
+  const RADIUS = {{ config.radius_miles }};
+
+  // ── Radar drawing ──────────────────────────────────────
+  const canvas = document.getElementById('radar');
+  const ctx = canvas.getContext('2d');
+  const CW = 480, CH = 480, CX = 240, CY = 240, CR = 210;
+
+  function altColor(ft) {
+    if (ft == null) return '#95A9B5';
+    if (ft < 12000) return '#F39C5A';
+    if (ft < 28000) return '#2DB5A3';
+    return '#B7E3F5';
+  }
+
+  function drawRadar(points) {
+    ctx.clearRect(0, 0, CW, CH);
+
+    // Background
+    ctx.fillStyle = '#0E2231';
+    ctx.beginPath(); ctx.arc(CX, CY, CR + 10, 0, Math.PI * 2); ctx.fill();
+
+    // Range rings
+    ctx.strokeStyle = '#1D6D67';
+    ctx.lineWidth = 1;
+    for (let i = 1; i <= 3; i++) {
+      ctx.beginPath();
+      ctx.arc(CX, CY, CR * i / 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Crosshair
+    ctx.beginPath();
+    ctx.moveTo(CX - CR, CY); ctx.lineTo(CX + CR, CY);
+    ctx.moveTo(CX, CY - CR); ctx.lineTo(CX, CY + CR);
+    ctx.stroke();
+
+    // N marker
+    ctx.fillStyle = '#F0F7F9';
+    ctx.font = 'bold 14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('N', CX, CY - CR - 6);
+
+    // Center dot
+    ctx.fillStyle = '#F0F7F9';
+    ctx.beginPath(); ctx.arc(CX, CY, 4, 0, Math.PI * 2); ctx.fill();
+
+    // Plot aircraft
+    if (!points) return;
+    for (const pt of points) {
+      const frac = Math.min(1, Math.max(0, pt.distance_miles / RADIUS));
+      const angle = pt.bearing * Math.PI / 180;
+      const px = CX + Math.sin(angle) * CR * frac;
+      const py = CY - Math.cos(angle) * CR * frac;
+
+      if (pt.is_featured) {
+        // Heading vector
+        const hAngle = pt.heading * Math.PI / 180;
+        const hx = px + Math.sin(hAngle) * 20;
+        const hy = py - Math.cos(hAngle) * 20;
+        ctx.strokeStyle = '#F0F7F9';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(hx, hy); ctx.stroke();
+
+        // Featured dot (larger, red outline)
+        ctx.fillStyle = altColor(pt.altitude_ft);
+        ctx.strokeStyle = '#E3655B';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+
+        // Callsign label
+        ctx.fillStyle = '#F0F7F9';
+        ctx.font = 'bold 11px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(pt.callsign, px + 12, py + 4);
+      } else {
+        ctx.fillStyle = pt.is_live ? altColor(pt.altitude_ft) : '#95A9B5';
+        ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  // ── Altitude color class ───────────────────────────────
+  function altClass(ft) {
+    if (ft == null) return '';
+    if (ft < 12000) return 'alt-low';
+    if (ft < 28000) return 'alt-mid';
+    return 'alt-high';
+  }
+
+  // ── Format helpers ─────────────────────────────────────
+  function fmtAlt(ft) {
+    if (ft == null) return '--';
+    return Math.round(ft / 1000) + 'K';
+  }
+  function fmtVS(fpm) {
+    if (fpm == null) return '--';
+    return (fpm >= 0 ? '+' : '') + fpm;
+  }
+
+  // ── Render featured aircraft ───────────────────────────
+  function renderFeatured(f) {
+    const panel = document.getElementById('featuredPanel');
+    if (!f) {
+      panel.innerHTML = '<div class="state-message"><h2>QUIET SKY</h2><p>No aircraft nearby</p></div>';
+      return;
+    }
+
+    const statusClass = f.is_live ? 'badge-live' : 'badge-recent';
+    const trendClass = f.trend === 'CLB' ? 'badge-clb' : f.trend === 'DSC' ? 'badge-dsc' : 'badge-lvl';
+    const routeHtml = f.route
+      ? `<div class="route-line">${esc(f.route)}</div>`
+      : `<div class="route-line no-route">NO ROUTE</div>`;
+
+    panel.innerHTML = `
+      <div class="featured-header">
+        <span class="callsign">${esc(f.callsign)}</span>
+        <span class="badge ${statusClass}">${esc(f.status_text)}</span>
+        <span class="badge ${trendClass}">${esc(f.trend)}</span>
+      </div>
+      <div class="type-line ${altClass(f.altitude_ft)}">${esc(f.type_line)}</div>
+      ${routeHtml}
+      ${f.owner ? `<div class="owner-line">${esc(f.owner)}</div>` : ''}
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <div class="metric-value">${f.distance_miles}</div>
+          <div class="metric-label">MILES</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value ${altClass(f.altitude_ft)}">${fmtAlt(f.altitude_ft)}</div>
+          <div class="metric-label">ALTITUDE</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value">${f.speed_kts != null ? f.speed_kts : '--'}</div>
+          <div class="metric-label">KNOTS</div>
+        </div>
+      </div>
+      <div class="metrics-secondary">
+        <div class="metric-sm">
+          <div class="metric-value">${f.bearing}&deg;</div>
+          <div class="metric-label">BEARING</div>
+        </div>
+        <div class="metric-sm">
+          <div class="metric-value">${f.heading}&deg;</div>
+          <div class="metric-label">HEADING</div>
+        </div>
+        <div class="metric-sm">
+          <div class="metric-value">${fmtVS(f.vertical_rate_fpm)}</div>
+          <div class="metric-label">FT/MIN</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Render recent sidebar ──────────────────────────────
+  function renderRecent(others) {
+    const list = document.getElementById('recentList');
+    if (!others || others.length === 0) {
+      list.innerHTML = '<div class="recent-empty">No other nearby aircraft</div>';
+      return;
+    }
+    list.innerHTML = others.map(r => `
+      <div class="recent-card ${r.is_live ? 'live' : ''}">
+        <div class="rc-callsign">${esc(r.callsign)}</div>
+        <div class="rc-detail">${r.distance_miles} mi &middot; ${fmtAlt(r.altitude_ft)} ft &middot; ${r.status_text}</div>
+        <div class="rc-route">${r.route ? esc(r.route) : 'NO ROUTE'}</div>
+      </div>
+    `).join('');
+  }
+
+  // ── HTML escape ────────────────────────────────────────
+  function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ── Clock ──────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ── Poll loop ──────────────────────────────────────────
+  let lastStatus = 'waiting';
+
+  async function poll() {
+    try {
+      const res = await fetch('/api/snapshot');
+      const data = await res.json();
+
+      const dot = document.getElementById('statusDot');
+      const lbl = document.getElementById('statusLabel');
+
+      if (data.status === 'ok') {
+        dot.className = data.stale ? 'status-dot stale' : 'status-dot';
+        lbl.textContent = data.stale ? 'STALE' : 'LIVE';
+        lbl.style.color = data.stale ? 'var(--warn)' : 'var(--accent)';
+      } else {
+        dot.className = 'status-dot stale';
+        lbl.textContent = 'SCANNING';
+        lbl.style.color = 'var(--warn)';
+      }
+
+      if (data.source_label) {
+        document.getElementById('sourceLabel').textContent = data.source_label;
+      }
+
+      drawRadar(data.radar_points);
+      renderFeatured(data.featured);
+      renderRecent(data.others);
+
+      document.getElementById('liveCount').textContent = data.live_count || 0;
+      document.getElementById('recentCount').textContent = data.recent_count || 0;
+      document.getElementById('footerDetail').textContent = data.detail || '';
+
+      lastStatus = data.status;
+    } catch (e) {
+      document.getElementById('statusDot').className = 'status-dot error';
+      document.getElementById('statusLabel').textContent = 'OFFLINE';
+      document.getElementById('statusLabel').style.color = 'var(--error)';
+    }
+  }
+
+  poll();
+  setInterval(poll, POLL_MS);
+})();
+</script>
+{% endif %}
+</body>
+</html>
