@@ -8,6 +8,7 @@ import time
 import requests
 
 METEO_URL = "https://api.open-meteo.com/v1/forecast"
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
 
 
 class WeatherClient:
@@ -17,6 +18,39 @@ class WeatherClient:
         self._cache = None
         self._cache_time = 0
         self._cache_ttl = 600  # refresh weather every 10 minutes
+        self._location_name = None
+        self._location_coords = None  # (lat, lon) that was geocoded
+
+    def _resolve_location(self, lat, lon):
+        """Reverse geocode coordinates to a human-readable place name."""
+        coords = (round(lat, 4), round(lon, 4))
+        if self._location_name and self._location_coords == coords:
+            return self._location_name
+        try:
+            resp = self._session.get(
+                NOMINATIM_URL,
+                params={
+                    "lat": lat, "lon": lon,
+                    "format": "json", "zoom": 10,
+                },
+                headers={"User-Agent": "PlanePortal-Pi/1.0"},
+                timeout=10,
+            )
+            if resp.status_code < 400:
+                addr = resp.json().get("address", {})
+                city = (addr.get("city") or addr.get("town")
+                        or addr.get("village") or addr.get("county") or "")
+                state = addr.get("state", "")
+                if city and state:
+                    self._location_name = f"{city}, {state}"
+                elif city:
+                    self._location_name = city
+                else:
+                    self._location_name = None
+                self._location_coords = coords
+        except Exception:
+            pass
+        return self._location_name
 
     def fetch(self):
         now = time.monotonic()
@@ -49,8 +83,14 @@ class WeatherClient:
             if resp.status_code >= 400:
                 return self._cache
 
-            data = resp.json().get("current", {})
+            payload = resp.json()
+            data = payload.get("current", {})
+            lat = self._config.home_latitude
+            lon = self._config.home_longitude
+            place = self._resolve_location(lat, lon)
+            fallback = f"{abs(lat):.2f}{'N' if lat >= 0 else 'S'}, {abs(lon):.2f}{'W' if lon < 0 else 'E'}"
             self._cache = {
+                "location": place or fallback,
                 "temp_f": data.get("temperature_2m"),
                 "feels_like_f": data.get("apparent_temperature"),
                 "humidity_pct": data.get("relative_humidity_2m"),

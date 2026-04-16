@@ -165,7 +165,7 @@ class FlightTracker:
         return {
             "records": records,
             "featured": records[0] if records else None,
-            "others": records[1:4],
+            "others": records[1:],
             "live_count": live_count,
             "recent_count": max(0, len(records) - live_count),
             "has_seen_aircraft": self._has_seen_aircraft,

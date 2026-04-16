@@ -88,6 +88,7 @@ class PlanePortalServer:
                         "is_featured": record is featured,
                         "heading": record["heading"],
                         "callsign": record["callsign"],
+                        "icao24": record["icao24"],
                         "notable_tag": serialized["notable_tag"] if serialized else None,
                         "notable_color": serialized["notable_color"] if serialized else None,
                     }

@@ -8,6 +8,9 @@
   /* ── Reset & Base ─────────────────────────────────────── */
   * { margin:0; padding:0; box-sizing:border-box; }
   ::-webkit-scrollbar { display:none; }
+  #recentList::-webkit-scrollbar { display:block; width:4px; }
+  #recentList::-webkit-scrollbar-track { background:transparent; }
+  #recentList::-webkit-scrollbar-thumb { background:var(--accent-dim); border-radius:2px; }
   html, body {
     width:100vw; height:100vh; overflow:hidden;
     font-family: 'Courier New', 'Liberation Mono', monospace;
@@ -64,7 +67,7 @@
   /* ── Main content ─────────────────────────────────────── */
   .content {
     display:grid; padding:8px;
-    grid-template-columns: 260px 1fr 200px;
+    grid-template-columns: 320px 1fr 220px;
     gap:8px; overflow:hidden;
   }
 
@@ -79,10 +82,10 @@
     margin-bottom:4px;
   }
   .radar-container {
-    position:relative; width:240px; height:240px;
+    position:relative; width:300px; height:300px;
   }
   canvas#radar {
-    width:240px; height:240px;
+    width:300px; height:300px;
     border-radius:50%;
   }
   .radar-legend {
@@ -192,26 +195,31 @@
   /* ── Recent sidebar (right) ───────────────────────────── */
   .recent-panel {
     background:var(--card-alt); border-radius:6px;
-    padding:8px; display:flex; flex-direction:column; gap:6px;
+    padding:6px; display:flex; flex-direction:column;
     overflow:hidden;
   }
   .recent-title {
     font-size:10px; color:var(--text-muted); letter-spacing:1px;
-    border-bottom:1px solid var(--accent-dim); padding-bottom:4px;
+    border-bottom:1px solid var(--accent-dim); padding-bottom:3px;
+    margin-bottom:4px; flex-shrink:0;
+  }
+  #recentList {
+    flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    display:flex; flex-direction:column; gap:3px;
   }
   .recent-card {
-    background:var(--card); border-radius:4px; padding:6px 8px;
-    border-left:3px solid var(--accent-dim);
+    background:var(--card); border-radius:4px; padding:4px 6px;
+    border-left:3px solid var(--accent-dim); flex-shrink:0;
   }
   .recent-card.live { border-left-color:var(--accent); }
   .recent-card .rc-callsign {
-    font-size:13px; font-weight:bold; color:var(--text);
+    font-size:11px; font-weight:bold; color:var(--text);
   }
   .recent-card .rc-detail {
-    font-size:10px; color:var(--text-muted);
+    font-size:9px; color:var(--text-muted);
   }
   .recent-card .rc-route {
-    font-size:10px; color:var(--accent);
+    font-size:9px; color:var(--accent);
   }
   .recent-card { cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .recent-card:active { opacity:0.7; }
@@ -435,7 +443,7 @@
       <div class="radar-panel" style="flex-shrink:0;">
         <div class="radar-title">RADAR &mdash; {{ config.radius_miles }} MI RADIUS</div>
         <div class="radar-container">
-          <canvas id="radar" width="480" height="480"></canvas>
+          <canvas id="radar" width="600" height="600"></canvas>
         </div>
         <div class="radar-legend">
           <span><span class="legend-dot" style="background:var(--alt-low)"></span>&lt;12K</span>
@@ -449,7 +457,7 @@
         </div>
       </div>
       <div class="weather-panel" id="weatherPanel">
-        <div class="weather-title">WEATHER</div>
+        <div class="weather-title">WEATHER — <span id="wxLocation">--</span></div>
         <div class="weather-condition" id="wxCondition">--</div>
         <div class="weather-grid">
           <span>Temp</span><span class="wval" id="wxTemp">--</span>
@@ -500,7 +508,7 @@
   // ── Radar drawing ──────────────────────────────────────
   const canvas = document.getElementById('radar');
   const ctx = canvas.getContext('2d');
-  const CW = 480, CH = 480, CX = 240, CY = 240, CR = 210;
+  const CW = 600, CH = 600, CX = 300, CY = 300, CR = 270;
 
   function altColor(ft) {
     if (ft == null) return '#95A9B5';
@@ -509,7 +517,11 @@
     return '#B7E3F5';
   }
 
+  let radarHits = [];  // [{icao24, px, py}] for tap detection
+  let lastOthers = []; // stash for selectCard
+
   function drawRadar(points) {
+    radarHits = [];
     ctx.clearRect(0, 0, CW, CH);
 
     // Background
@@ -533,13 +545,13 @@
 
     // N marker
     ctx.fillStyle = '#F0F7F9';
-    ctx.font = 'bold 14px monospace';
+    ctx.font = 'bold 16px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('N', CX, CY - CR - 6);
+    ctx.fillText('N', CX, CY - CR - 8);
 
     // Center dot
     ctx.fillStyle = '#F0F7F9';
-    ctx.beginPath(); ctx.arc(CX, CY, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(CX, CY, 5, 0, Math.PI * 2); ctx.fill();
 
     // Plot aircraft
     if (!points) return;
@@ -548,28 +560,29 @@
       const angle = pt.bearing * Math.PI / 180;
       const px = CX + Math.sin(angle) * CR * frac;
       const py = CY - Math.cos(angle) * CR * frac;
+      if (pt.icao24) radarHits.push({icao24: pt.icao24, px, py});
 
       if (pt.is_featured) {
         // Heading vector
         const hAngle = pt.heading * Math.PI / 180;
-        const hx = px + Math.sin(hAngle) * 20;
-        const hy = py - Math.cos(hAngle) * 20;
+        const hx = px + Math.sin(hAngle) * 26;
+        const hy = py - Math.cos(hAngle) * 26;
         ctx.strokeStyle = '#F0F7F9';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(hx, hy); ctx.stroke();
 
         // Featured dot (larger, red outline)
         ctx.fillStyle = altColor(pt.altitude_ft);
         ctx.strokeStyle = '#E3655B';
         ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI * 2);
         ctx.fill(); ctx.stroke();
 
         // Callsign label
         ctx.fillStyle = '#F0F7F9';
-        ctx.font = 'bold 11px monospace';
+        ctx.font = 'bold 13px monospace';
         ctx.textAlign = 'left';
-        ctx.fillText(pt.callsign, px + 12, py + 4);
+        ctx.fillText(pt.callsign, px + 14, py + 5);
       } else {
         // Notable aircraft get a diamond shape and label
         if (pt.notable_tag) {
@@ -577,21 +590,42 @@
           ctx.save();
           ctx.translate(px, py);
           ctx.rotate(Math.PI / 4);
-          ctx.fillRect(-4, -4, 8, 8);
+          ctx.fillRect(-6, -6, 12, 12);
           ctx.restore();
           ctx.fillStyle = pt.notable_color || '#F3BE4E';
-          ctx.font = 'bold 9px monospace';
+          ctx.font = 'bold 11px monospace';
           ctx.textAlign = 'left';
-          ctx.fillText(pt.notable_tag, px + 8, py + 3);
+          ctx.fillText(pt.notable_tag, px + 10, py + 4);
         } else {
           ctx.fillStyle = pt.is_live ? altColor(pt.altitude_ft) : '#95A9B5';
-          ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2); ctx.fill();
         }
       }
     }
   }
 
   // ── Altitude color class ───────────────────────────────
+  // ── Radar tap-to-select ─────────────────────────────────
+  canvas.addEventListener('click', function(e) {
+    if (radarHits.length === 0) return;
+    const rect = canvas.getBoundingClientRect();
+    // Scale click coords to canvas coords
+    const scaleX = CW / rect.width;
+    const scaleY = CH / rect.height;
+    const cx = (e.clientX - rect.left) * scaleX;
+    const cy = (e.clientY - rect.top) * scaleY;
+
+    // Find closest aircraft within 30 canvas-pixels (~touch finger)
+    let best = null, bestDist = 30;
+    for (const h of radarHits) {
+      const d = Math.hypot(h.px - cx, h.py - cy);
+      if (d < bestDist) { bestDist = d; best = h; }
+    }
+    if (best) {
+      selectCard(best.icao24, lastOthers);
+    }
+  });
+
   function altClass(ft) {
     if (ft == null) return '';
     if (ft < 12000) return 'alt-low';
@@ -681,6 +715,19 @@
     }
   }
 
+  // ── Select aircraft (shared by recent list + radar tap) ─
+  function selectCard(icao, others) {
+    if (pinnedIcao === icao) {
+      pinnedIcao = null;
+    } else {
+      pinnedIcao = icao;
+    }
+    const ac = allAircraft[pinnedIcao];
+    if (ac) renderFeatured(ac);
+    else if (!pinnedIcao) poll();
+    if (others) renderRecent(others);
+  }
+
   // ── Render recent sidebar ──────────────────────────────
   function renderRecent(others) {
     const list = document.getElementById('recentList');
@@ -702,18 +749,22 @@
     }).join('');
 
     list.querySelectorAll('.recent-card[data-icao]').forEach(card => {
-      card.addEventListener('click', function() {
-        const icao = this.dataset.icao;
-        if (pinnedIcao === icao) {
-          pinnedIcao = null;
-        } else {
-          pinnedIcao = icao;
+      let touchY = null;
+      card.addEventListener('touchstart', function(e) {
+        touchY = e.touches[0].clientY;
+      }, {passive: true});
+      card.addEventListener('touchend', function(e) {
+        // Only count as a tap if finger didn't move more than 10px
+        if (touchY !== null && e.changedTouches.length) {
+          const dy = Math.abs(e.changedTouches[0].clientY - touchY);
+          if (dy < 10) selectCard(this.dataset.icao, others);
         }
-        const ac = allAircraft[pinnedIcao];
-        if (ac) {
-          renderFeatured(ac);
-        }
-        renderRecent(others);
+        touchY = null;
+      });
+      // Mouse click still works for non-touch
+      card.addEventListener('click', function(e) {
+        if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+        selectCard(this.dataset.icao, others);
       });
     });
   }
@@ -738,6 +789,7 @@
   // ── Weather rendering ───────────────────────────────────
   function renderWeather(wx) {
     if (!wx) return;
+    document.getElementById('wxLocation').textContent = wx.location || '--';
     document.getElementById('wxCondition').textContent = wx.condition || '--';
     document.getElementById('wxTemp').textContent =
       wx.temp_f != null ? Math.round(wx.temp_f) + '\u00B0F' : '--';
@@ -785,10 +837,11 @@
       // If pinned aircraft is gone, unpin
       if (pinnedIcao && !allAircraft[pinnedIcao]) pinnedIcao = null;
 
+      lastOthers = data.others || [];
       drawRadar(data.radar_points);
       const displayFeatured = pinnedIcao ? allAircraft[pinnedIcao] : data.featured;
       renderFeatured(displayFeatured);
-      renderRecent(data.others);
+      renderRecent(lastOthers);
 
       document.getElementById('liveCount').textContent = data.live_count || 0;
       document.getElementById('recentCount').textContent = data.recent_count || 0;
