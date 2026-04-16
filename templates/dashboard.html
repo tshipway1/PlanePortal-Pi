@@ -1028,6 +1028,7 @@
 
   // ── Poll loop ──────────────────────────────────────────
   let lastStatus = 'waiting';
+  const SERVER_VERSION = '{{ server_version }}';  // set at page load
 
   async function poll() {
     try {
@@ -1070,6 +1071,12 @@
       document.getElementById('recentCount').textContent = data.recent_count || 0;
       document.getElementById('footerDetail').textContent = data.detail || '';
       renderWeather(data.weather);
+
+      // Auto-reload if server has restarted (new version)
+      if (data.server_version && data.server_version !== SERVER_VERSION) {
+        location.reload();
+        return;
+      }
 
       lastStatus = data.status;
     } catch (e) {

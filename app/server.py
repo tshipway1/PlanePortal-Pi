@@ -39,6 +39,12 @@ class PlanePortalServer:
         )
         self._register_routes()
         self._register_settings_routes()
+        self._start_time = str(int(time.time()))
+
+        @self.app.after_request
+        def no_cache(response):
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
     def _register_routes(self):
         @self.app.route("/")
@@ -47,6 +53,7 @@ class PlanePortalServer:
             return render_template(
                 "dashboard.html",
                 config=self._config,
+                server_version=self._start_time,
                 validation_error=validation_error,
             )
 
@@ -109,6 +116,7 @@ class PlanePortalServer:
                     "has_seen_aircraft": snapshot["has_seen_aircraft"],
                     "radius_miles": self._config.radius_miles,
                     "source_label": self._config.source_label(),
+                    "server_version": self._start_time,
                     "weather": weather,
                 }
             )
