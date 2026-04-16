@@ -815,8 +815,9 @@
     const gust = wx.wind_gusts_kts != null && wx.wind_gusts_kts > wx.wind_kts + 5
       ? ' G' + Math.round(wx.wind_gusts_kts) : '';
     document.getElementById('wxWind').textContent = windDir + ' ' + windSpd + gust;
+    const visMi = wx.visibility_m != null ? wx.visibility_m / 1609.34 : null;
     document.getElementById('wxVis').textContent =
-      wx.visibility_m != null ? (wx.visibility_m >= 9999 ? '>10km' : (wx.visibility_m / 1000).toFixed(1) + 'km') : '--';
+      visMi != null ? (visMi >= 6 ? '>6mi' : visMi.toFixed(1) + 'mi') : '--';
     const cc = wx.cloud_cover_pct;
     document.getElementById('wxClouds').textContent =
       cc == null ? '--' : cc <= 10 ? 'Clear' : cc <= 30 ? 'Few' : cc <= 60 ? 'Scattered' : cc <= 85 ? 'Broken' : 'Overcast';
