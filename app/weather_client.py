@@ -31,7 +31,7 @@ class WeatherClient:
                 NOMINATIM_URL,
                 params={
                     "lat": lat, "lon": lon,
-                    "format": "json", "zoom": 10,
+                    "format": "json", "zoom": 14,
                 },
                 headers={"User-Agent": "PlanePortal-Pi/1.0"},
                 timeout=10,
@@ -39,7 +39,8 @@ class WeatherClient:
             if resp.status_code < 400:
                 addr = resp.json().get("address", {})
                 city = (addr.get("city") or addr.get("town")
-                        or addr.get("village") or addr.get("county") or "")
+                        or addr.get("village") or addr.get("hamlet")
+                        or addr.get("county") or "")
                 state = addr.get("state", "")
                 if city and state:
                     self._location_name = f"{city}, {state}"
