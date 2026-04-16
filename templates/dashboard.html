@@ -99,6 +99,36 @@
   }
   .radar-stats span { color:var(--accent); font-weight:bold; }
 
+  /* ── Weather panel (below radar) ─────────────────────── */
+  .weather-panel {
+    background:var(--sky-band); border-radius:6px; padding:6px 10px;
+    margin-top:4px;
+  }
+  .weather-title {
+    font-size:9px; color:var(--text-muted); letter-spacing:1px;
+    margin-bottom:4px;
+  }
+  .weather-condition {
+    font-size:12px; color:var(--text); font-weight:bold;
+    margin-bottom:2px;
+  }
+  .weather-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:2px 8px;
+    font-size:10px; color:var(--text-muted);
+  }
+  .weather-grid .wval { color:var(--text); font-weight:bold; }
+
+  /* ── Notable badge ───────────────────────────────────── */
+  .badge-notable {
+    font-size:9px; font-weight:bold; padding:2px 6px;
+    border-radius:3px; letter-spacing:1px;
+    animation: notable-pulse 2s infinite;
+  }
+  @keyframes notable-pulse {
+    0%,100% { opacity:1; } 50% { opacity:0.6; }
+  }
+  .recent-card.notable { border-left-width:3px; }
+
   /* ── Featured card (center) ───────────────────────────── */
   .featured-panel {
     background:var(--card); border-radius:6px; padding:12px;
@@ -221,6 +251,102 @@
   .alt-low  { color:var(--alt-low); }
   .alt-mid  { color:var(--alt-mid); }
   .alt-high { color:var(--alt-high); }
+
+  /* ── Settings gear button ─────────────────────────────── */
+  .settings-btn {
+    background:none; border:none; color:var(--text-muted);
+    font-size:20px; cursor:pointer; padding:4px 8px;
+    -webkit-tap-highlight-color:transparent; line-height:1;
+  }
+  .settings-btn:hover, .settings-btn:active { color:var(--accent); }
+
+  /* ── Settings overlay ─────────────────────────────────── */
+  .settings-overlay {
+    display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;
+    background:var(--bg); z-index:100;
+    flex-direction:column;
+  }
+  .settings-overlay.open { display:flex; }
+
+  /* Top: scrollable fields */
+  .settings-fields {
+    flex:1; overflow-y:auto; padding:8px 16px 4px;
+  }
+  .settings-fields h2 {
+    font-size:14px; color:var(--accent); letter-spacing:2px;
+    margin-bottom:8px; text-align:center;
+  }
+  .settings-group {
+    margin-bottom:6px;
+  }
+  .settings-group label {
+    display:block; font-size:9px; color:var(--text-muted);
+    letter-spacing:1px; margin-bottom:2px;
+  }
+  .settings-group input {
+    width:100%; padding:5px 8px; font-size:13px;
+    font-family:'Courier New', monospace;
+    background:var(--card-alt); color:var(--text); border:1px solid var(--accent-dim);
+    border-radius:4px; outline:none;
+  }
+  .settings-group input:focus { border-color:var(--accent); }
+  .settings-group input.active-input { border-color:var(--accent); background:var(--sky-band); }
+  .settings-row {
+    display:grid; grid-template-columns:1fr 1fr; gap:8px;
+  }
+
+  /* Bottom: keyboard + buttons pinned */
+  .settings-bottom {
+    flex-shrink:0; background:var(--card); border-top:2px solid var(--accent-dim);
+    padding:6px 12px 8px;
+  }
+  .settings-actions {
+    display:flex; gap:8px; justify-content:center;
+  }
+  .settings-actions button {
+    padding:8px 20px; font-size:12px; font-family:'Courier New', monospace;
+    border:none; border-radius:4px; cursor:pointer; letter-spacing:1px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn-save { background:var(--accent); color:var(--bg); font-weight:bold; }
+  .btn-save:active { opacity:0.7; }
+  .btn-cancel { background:var(--card-alt); color:var(--text-muted); border:1px solid var(--accent-dim) !important; }
+  .btn-cancel:active { opacity:0.7; }
+  .settings-status {
+    text-align:center; font-size:10px; margin-top:4px; min-height:14px;
+  }
+
+  /* ── On-screen keyboard ──────────────────────────────── */
+  .osk {
+    display:none; margin-bottom:6px;
+  }
+  .osk.open { display:block; }
+  .osk-label {
+    font-size:9px; color:var(--accent); letter-spacing:1px;
+    margin-bottom:4px; text-align:center;
+  }
+  .osk-row {
+    display:flex; justify-content:center; gap:3px; margin-bottom:3px;
+  }
+  .osk-key {
+    min-width:32px; height:30px; border:none; border-radius:4px;
+    background:var(--sky-band); color:var(--text); font-size:14px;
+    font-family:'Courier New', monospace; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .osk-key:active { background:var(--accent); color:var(--bg); }
+  .osk-key.wide { min-width:48px; font-size:11px; }
+  .osk-mode-row {
+    display:flex; justify-content:center; gap:6px; margin-bottom:4px;
+  }
+  .osk-mode-btn {
+    padding:3px 12px; font-size:9px; font-family:'Courier New', monospace;
+    border:1px solid var(--accent-dim); border-radius:3px;
+    background:var(--card-alt); color:var(--text-muted); cursor:pointer;
+    letter-spacing:1px; -webkit-tap-highlight-color:transparent;
+  }
+  .osk-mode-btn.active { background:var(--accent); color:var(--bg); border-color:var(--accent); }
 </style>
 </head>
 <body>
@@ -231,6 +357,66 @@
     <span class="status-dot" id="statusDot"></span>
     <span id="statusLabel" style="font-size:11px;color:var(--accent);">SCANNING</span>
     <span class="source" id="sourceLabel">{{ config.source_label() }}</span>
+    <button class="settings-btn" id="settingsBtn" title="Settings">&#9881;</button>
+  </div>
+
+  <!-- Settings Overlay -->
+  <div class="settings-overlay" id="settingsOverlay">
+    <div class="settings-fields">
+      <h2>SETTINGS</h2>
+      <div class="settings-row">
+        <div class="settings-group">
+          <label>LATITUDE</label>
+          <input type="text" id="set_lat" placeholder="39.70328">
+        </div>
+        <div class="settings-group">
+          <label>LONGITUDE</label>
+          <input type="text" id="set_lon" placeholder="-78.570074">
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-group">
+          <label>RADIUS (MILES)</label>
+          <input type="text" id="set_radius" placeholder="10">
+        </div>
+        <div class="settings-group">
+          <label>REFRESH (SECONDS)</label>
+          <input type="text" id="set_refresh" placeholder="120">
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-group">
+          <label>RECENT WINDOW (MIN)</label>
+          <input type="text" id="set_recent" placeholder="10">
+        </div>
+        <div class="settings-group"></div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-group">
+          <label>OPENSKY CLIENT ID</label>
+          <input type="text" id="set_osid" placeholder="(optional)">
+        </div>
+        <div class="settings-group">
+          <label>OPENSKY CLIENT SECRET</label>
+          <input type="password" id="set_ossecret" placeholder="(optional)">
+        </div>
+      </div>
+    </div>
+    <div class="settings-bottom">
+      <div class="osk" id="osk">
+        <div class="osk-label" id="oskLabel">KEYBOARD</div>
+        <div class="osk-mode-row">
+          <button class="osk-mode-btn active" data-mode="num">123</button>
+          <button class="osk-mode-btn" data-mode="alpha">ABC</button>
+        </div>
+        <div id="oskKeys"></div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn-cancel" id="settingsCancel">CANCEL</button>
+        <button class="btn-save" id="settingsSave">SAVE &amp; RESTART</button>
+      </div>
+      <div class="settings-status" id="settingsStatus"></div>
+    </div>
   </div>
 
   <!-- Main Content -->
@@ -244,21 +430,33 @@
       </div>
     </div>
     {% else %}
-    <!-- Radar -->
-    <div class="radar-panel">
-      <div class="radar-title">RADAR &mdash; {{ config.radius_miles }} MI RADIUS</div>
-      <div class="radar-container">
-        <canvas id="radar" width="480" height="480"></canvas>
+    <!-- Left column: Radar + Weather -->
+    <div style="display:flex;flex-direction:column;gap:4px;overflow:hidden;">
+      <div class="radar-panel" style="flex-shrink:0;">
+        <div class="radar-title">RADAR &mdash; {{ config.radius_miles }} MI RADIUS</div>
+        <div class="radar-container">
+          <canvas id="radar" width="480" height="480"></canvas>
+        </div>
+        <div class="radar-legend">
+          <span><span class="legend-dot" style="background:var(--alt-low)"></span>&lt;12K</span>
+          <span><span class="legend-dot" style="background:var(--alt-mid)"></span>12-28K</span>
+          <span><span class="legend-dot" style="background:var(--alt-high)"></span>&gt;28K</span>
+          <span><span class="legend-dot" style="background:var(--error)"></span>Featured</span>
+        </div>
+        <div class="radar-stats">
+          <span id="liveCount">0</span> live &middot;
+          <span id="recentCount">0</span> recent
+        </div>
       </div>
-      <div class="radar-legend">
-        <span><span class="legend-dot" style="background:var(--alt-low)"></span>&lt;12K</span>
-        <span><span class="legend-dot" style="background:var(--alt-mid)"></span>12-28K</span>
-        <span><span class="legend-dot" style="background:var(--alt-high)"></span>&gt;28K</span>
-        <span><span class="legend-dot" style="background:var(--error)"></span>Featured</span>
-      </div>
-      <div class="radar-stats">
-        <span id="liveCount">0</span> live &middot;
-        <span id="recentCount">0</span> recent
+      <div class="weather-panel" id="weatherPanel">
+        <div class="weather-title">WEATHER</div>
+        <div class="weather-condition" id="wxCondition">--</div>
+        <div class="weather-grid">
+          <span>Temp</span><span class="wval" id="wxTemp">--</span>
+          <span>Wind</span><span class="wval" id="wxWind">--</span>
+          <span>Visibility</span><span class="wval" id="wxVis">--</span>
+          <span>Clouds</span><span class="wval" id="wxClouds">--</span>
+        </div>
       </div>
     </div>
 
@@ -373,8 +571,22 @@
         ctx.textAlign = 'left';
         ctx.fillText(pt.callsign, px + 12, py + 4);
       } else {
-        ctx.fillStyle = pt.is_live ? altColor(pt.altitude_ft) : '#95A9B5';
-        ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+        // Notable aircraft get a diamond shape and label
+        if (pt.notable_tag) {
+          ctx.fillStyle = pt.notable_color || '#F3BE4E';
+          ctx.save();
+          ctx.translate(px, py);
+          ctx.rotate(Math.PI / 4);
+          ctx.fillRect(-4, -4, 8, 8);
+          ctx.restore();
+          ctx.fillStyle = pt.notable_color || '#F3BE4E';
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText(pt.notable_tag, px + 8, py + 3);
+        } else {
+          ctx.fillStyle = pt.is_live ? altColor(pt.altitude_ft) : '#95A9B5';
+          ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+        }
       }
     }
   }
@@ -416,11 +628,16 @@
       ? '<div class="pin-hint" id="unpinBtn">TAP TO DESELECT</div>'
       : '';
 
+    const notableBadge = f.notable_tag
+      ? `<span class="badge badge-notable" style="background:${f.notable_color};color:var(--bg);">${esc(f.notable_tag)}</span>`
+      : '';
+
     panel.innerHTML = `
       <div class="featured-header">
         <span class="callsign">${esc(f.callsign)}</span>
         <span class="badge ${statusClass}">${esc(f.status_text)}</span>
         <span class="badge ${trendClass}">${esc(f.trend)}</span>
+        ${notableBadge}
       </div>
       <div class="type-line ${altClass(f.altitude_ft)}">${esc(f.type_line)}</div>
       ${routeHtml}
@@ -471,14 +688,18 @@
       list.innerHTML = '<div class="recent-empty">No other nearby aircraft</div>';
       return;
     }
-    list.innerHTML = others.map(r => `
-      <div class="recent-card ${r.is_live ? 'live' : ''} ${pinnedIcao === r.icao24 ? 'selected' : ''}"
-           data-icao="${esc(r.icao24)}">
-        <div class="rc-callsign">${esc(r.callsign)}</div>
+    list.innerHTML = others.map(r => {
+      const nb = r.notable_tag
+        ? `<span class="badge badge-notable" style="background:${r.notable_color};color:var(--bg);font-size:8px;padding:1px 4px;margin-left:4px;">${esc(r.notable_tag)}</span>`
+        : '';
+      return `
+      <div class="recent-card ${r.is_live ? 'live' : ''} ${r.notable_tag ? 'notable' : ''} ${pinnedIcao === r.icao24 ? 'selected' : ''}"
+           data-icao="${esc(r.icao24)}"${r.notable_color ? ` style="border-left-color:${r.notable_color}"` : ''}>
+        <div class="rc-callsign">${esc(r.callsign)}${nb}</div>
         <div class="rc-detail">${r.distance_miles} mi &middot; ${fmtAlt(r.altitude_ft)} ft &middot; ${r.status_text}</div>
         <div class="rc-route">${r.route ? esc(r.route) : 'NO ROUTE'}</div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
     list.querySelectorAll('.recent-card[data-icao]').forEach(card => {
       card.addEventListener('click', function() {
@@ -513,6 +734,23 @@
   }
   setInterval(updateClock, 1000);
   updateClock();
+
+  // ── Weather rendering ───────────────────────────────────
+  function renderWeather(wx) {
+    if (!wx) return;
+    document.getElementById('wxCondition').textContent = wx.condition || '--';
+    document.getElementById('wxTemp').textContent =
+      wx.temp_f != null ? Math.round(wx.temp_f) + '\u00B0F' : '--';
+    const windDir = wx.wind_dir != null ? Math.round(wx.wind_dir) + '\u00B0' : '';
+    const windSpd = wx.wind_kts != null ? Math.round(wx.wind_kts) + 'kt' : '--';
+    const gust = wx.wind_gusts_kts != null && wx.wind_gusts_kts > wx.wind_kts + 5
+      ? ' G' + Math.round(wx.wind_gusts_kts) : '';
+    document.getElementById('wxWind').textContent = windDir + ' ' + windSpd + gust;
+    document.getElementById('wxVis').textContent =
+      wx.visibility_m != null ? (wx.visibility_m >= 9999 ? '>10km' : (wx.visibility_m / 1000).toFixed(1) + 'km') : '--';
+    document.getElementById('wxClouds').textContent =
+      wx.cloud_cover_pct != null ? wx.cloud_cover_pct + '%' : '--';
+  }
 
   // ── Poll loop ──────────────────────────────────────────
   let lastStatus = 'waiting';
@@ -555,6 +793,7 @@
       document.getElementById('liveCount').textContent = data.live_count || 0;
       document.getElementById('recentCount').textContent = data.recent_count || 0;
       document.getElementById('footerDetail').textContent = data.detail || '';
+      renderWeather(data.weather);
 
       lastStatus = data.status;
     } catch (e) {
@@ -566,6 +805,168 @@
 
   poll();
   setInterval(poll, POLL_MS);
+
+  // ── Settings panel ─────────────────────────────────────
+  const overlay = document.getElementById('settingsOverlay');
+  const statusEl = document.getElementById('settingsStatus');
+  const osk = document.getElementById('osk');
+  const oskKeys = document.getElementById('oskKeys');
+  const oskLabel = document.getElementById('oskLabel');
+  let activeInput = null;
+  let oskMode = 'num';
+
+  const fieldMap = {
+    'PLANEPORTAL_HOME_LATITUDE':      'set_lat',
+    'PLANEPORTAL_HOME_LONGITUDE':     'set_lon',
+    'PLANEPORTAL_RADIUS_MILES':       'set_radius',
+    'PLANEPORTAL_REFRESH_SECONDS':    'set_refresh',
+    'PLANEPORTAL_RECENT_WINDOW_MINUTES': 'set_recent',
+    'OPENSKY_CLIENT_ID':              'set_osid',
+    'OPENSKY_CLIENT_SECRET':          'set_ossecret',
+  };
+
+  const fieldLabels = {
+    'set_lat': 'LATITUDE', 'set_lon': 'LONGITUDE',
+    'set_radius': 'RADIUS', 'set_refresh': 'REFRESH',
+    'set_recent': 'RECENT WINDOW',
+    'set_osid': 'CLIENT ID', 'set_ossecret': 'CLIENT SECRET',
+  };
+
+  // ── On-screen keyboard ─────────────────────────────────
+  const numKeys = [
+    ['7','8','9'],
+    ['4','5','6'],
+    ['1','2','3'],
+    ['-','0','.'],
+    ['DEL','CLR','OK'],
+  ];
+  const alphaKeys = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['Z','X','C','V','B','N','M','-','_'],
+    ['DEL','CLR','OK'],
+  ];
+
+  function renderOSK() {
+    const keys = oskMode === 'num' ? numKeys : alphaKeys;
+    oskKeys.innerHTML = keys.map(row =>
+      '<div class="osk-row">' + row.map(k => {
+        let cls = 'osk-key';
+        if (k === 'DEL' || k === 'CLR') cls += ' wide';
+        if (k === 'OK') cls += ' wide';
+        return `<button class="${cls}" data-key="${k}">${k}</button>`;
+      }).join('') + '</div>'
+    ).join('');
+
+    document.querySelectorAll('.osk-mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === oskMode);
+    });
+  }
+
+  function activateInput(input) {
+    if (activeInput) activeInput.classList.remove('active-input');
+    activeInput = input;
+    activeInput.classList.add('active-input');
+    oskLabel.textContent = 'EDITING: ' + (fieldLabels[input.id] || '');
+    osk.classList.add('open');
+    // Auto-switch to numeric for coordinate/number fields
+    const numericFields = ['set_lat','set_lon','set_radius','set_refresh','set_recent'];
+    oskMode = numericFields.includes(input.id) ? 'num' : 'alpha';
+    renderOSK();
+    // Scroll input into view
+    input.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  // Wire up input focus via tap
+  document.querySelectorAll('.settings-group input').forEach(input => {
+    input.addEventListener('click', (e) => {
+      e.preventDefault();
+      activateInput(input);
+    });
+    // Prevent native keyboard from appearing
+    input.setAttribute('readonly', 'readonly');
+  });
+
+  // OSK key handler
+  oskKeys.addEventListener('click', (e) => {
+    const btn = e.target.closest('.osk-key');
+    if (!btn || !activeInput) return;
+    const key = btn.dataset.key;
+    if (key === 'DEL') {
+      activeInput.value = activeInput.value.slice(0, -1);
+    } else if (key === 'CLR') {
+      activeInput.value = '';
+    } else if (key === 'OK') {
+      activeInput.classList.remove('active-input');
+      osk.classList.remove('open');
+      activeInput = null;
+    } else {
+      activeInput.value += key;
+    }
+  });
+
+  // Mode switch (num/alpha)
+  document.querySelectorAll('.osk-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      oskMode = btn.dataset.mode;
+      renderOSK();
+    });
+  });
+
+  async function openSettings() {
+    statusEl.textContent = '';
+    activeInput = null;
+    osk.classList.remove('open');
+    document.querySelectorAll('.settings-group input').forEach(i => i.classList.remove('active-input'));
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      for (const [key, id] of Object.entries(fieldMap)) {
+        document.getElementById(id).value = data[key] || '';
+      }
+    } catch (e) {
+      statusEl.textContent = 'Failed to load settings';
+      statusEl.style.color = 'var(--error)';
+    }
+    overlay.classList.add('open');
+  }
+
+  async function saveSettings() {
+    const payload = {};
+    for (const [key, id] of Object.entries(fieldMap)) {
+      payload[key] = document.getElementById(id).value.trim();
+    }
+    statusEl.textContent = 'Saving...';
+    statusEl.style.color = 'var(--warn)';
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.error) {
+        statusEl.textContent = data.error;
+        statusEl.style.color = 'var(--error)';
+        return;
+      }
+      statusEl.textContent = 'Saved! Restarting...';
+      statusEl.style.color = 'var(--accent)';
+      setTimeout(() => { location.reload(); }, 4000);
+    } catch (e) {
+      statusEl.textContent = 'Save failed';
+      statusEl.style.color = 'var(--error)';
+    }
+  }
+
+  document.getElementById('settingsBtn').addEventListener('click', openSettings);
+  document.getElementById('settingsCancel').addEventListener('click', () => overlay.classList.remove('open'));
+  document.getElementById('settingsSave').addEventListener('click', saveSettings);
+
+  // Close overlay when tapping outside the panel
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
 })();
 </script>
 {% endif %}

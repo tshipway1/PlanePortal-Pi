@@ -10,20 +10,38 @@ Ported from the original [PlanePortal](https://github.com/kevinl95/PlanePortal) 
 - Applies a true circular radius filter (default 3 miles)
 - Keeps a rolling recent-aircraft memory so planes remain visible after passing through
 - Enriches aircraft with ADSBDB metadata: registration, aircraft type, airline, and route
+- Detects and highlights notable aircraft: military, helicopters, heavy/widebody, UAVs, and government
+- Displays live weather conditions (temperature, wind, visibility, cloud cover) from Open-Meteo
 - Renders an aviation-style dashboard with a live radar view, featured aircraft card, metrics, and a recent-traffic sidebar
+- On-screen settings panel with built-in touch keyboard — no physical keyboard needed
 - Auto-refreshes via AJAX — no page reloads needed
 
 ## What the screen shows
 
-- **Header**: app title, live/stale status indicator, data source
-- **Radar panel** (left): aircraft plotted by bearing and distance, color-coded by altitude
-- **Featured aircraft card** (center): callsign, type, route, operator, distance, altitude, speed, heading, vertical rate, and climb/descent trend
+- **Header**: app title, live/stale status indicator, data source, settings gear
+- **Radar panel** (left): aircraft plotted by bearing and distance, color-coded by altitude; notable aircraft shown as diamonds with labels
+- **Weather panel** (below radar): current conditions — temperature, wind, visibility, cloud cover
+- **Featured aircraft card** (center): callsign, type, route, operator, distance, altitude, speed, heading, vertical rate, climb/descent trend, and notable badge
 - **Recent sidebar** (right): other nearby aircraft with key details — tap any card to view its full details in the featured panel
 - **Footer**: live/recent counts and status notes
 
 ### Touch interaction
 
 On a touchscreen display, tap an aircraft in the recent sidebar to see its full details in the center panel. Tap "TAP TO DESELECT" or tap the same card again to return to the default view (closest aircraft featured).
+
+Tap the gear icon in the header to open the settings panel. All settings can be edited with the built-in on-screen keyboard — no physical keyboard required. Saving restarts the service automatically.
+
+### Notable aircraft
+
+Military, government, helicopters, heavy/widebody jets, and UAVs are automatically detected and highlighted with a pulsing badge and diamond radar marker.
+
+| Tag | Trigger | Radar color |
+|-----|---------|-------------|
+| MILITARY | Military callsigns, owners, or types (C-17, F-16, etc.) | Red |
+| HELO | Rotorcraft | Yellow |
+| HEAVY | Heavy/widebody aircraft | Light blue |
+| UAV | Drones | Red |
+| GOV | Government / law enforcement | Yellow |
 
 ### Altitude color coding
 
@@ -124,11 +142,12 @@ python run.py
 ```
 run.py                  <- Entry point: loads .env, starts Flask
 app/
-  server.py             <- Flask app, background fetch loop, JSON API
+  server.py             <- Flask app, background fetch loop, JSON API, settings API
   config.py             <- Reads settings from environment variables
   opensky_client.py     <- OpenSky OAuth2 + state vector fetching
   adsbdb_client.py      <- Aircraft metadata enrichment + caching
   tracker.py            <- Radius filtering, distance math, flight registry
+  weather_client.py     <- Open-Meteo weather conditions (no API key needed)
 templates/
   dashboard.html        <- Full dashboard UI (HTML + CSS + JS + Canvas)
 setup-pi.sh             <- One-step Pi installer
@@ -140,6 +159,7 @@ The app runs a Flask web server with a background thread that periodically polls
 
 - **OpenSky Network** — live aircraft positions, altitude, speed, heading, vertical rate
 - **ADSBDB** — aircraft registration, type, route, airline, operator (best-effort)
+- **Open-Meteo** — current weather conditions (free, no API key required)
 
 ## Differences from original PlanePortal
 
@@ -151,6 +171,9 @@ The app runs a Flask web server with a background thread that periodically polls
 | Networking | ESP32 SPI WiFi | Native WiFi/Ethernet |
 | Rendering | Bitmap pixel drawing | Canvas radar + DOM layout |
 | Touch | None | Tap aircraft to view details |
+| Weather | None | Live conditions from Open-Meteo |
+| Notable detection | None | Military, helo, heavy, UAV, gov |
+| Settings | Edit config files | On-screen touch UI |
 | Access | Device-only | Any browser on the network |
 
 ## Troubleshooting

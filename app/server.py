@@ -5,15 +5,18 @@ polls for live data. A background thread runs the fetch/enrich cycle.
 """
 
 import math
+import os
+import signal
 import threading
 import time
 
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 
 from app.adsbdb_client import ADSBDBClient
 from app.config import AppConfig
 from app.opensky_client import OpenSkyClient
 from app.tracker import FlightTracker
+from app.weather_client import WeatherClient
 
 
 class PlanePortalServer:
@@ -22,9 +25,11 @@ class PlanePortalServer:
         self._tracker = FlightTracker(self._config)
         self._opensky = OpenSkyClient(self._config)
         self._adsbdb = ADSBDBClient(self._config)
+        self._weather = WeatherClient(self._config)
         self._last_snapshot = None
         self._last_detail = ""
         self._last_error = None
+        self._last_weather = None
         self._lock = threading.Lock()
 
         self.app = Flask(
@@ -33,6 +38,7 @@ class PlanePortalServer:
             static_folder="../static",
         )
         self._register_routes()
+        self._register_settings_routes()
 
     def _register_routes(self):
         @self.app.route("/")
@@ -50,6 +56,7 @@ class PlanePortalServer:
                 snapshot = self._last_snapshot
                 detail = self._last_detail
                 error = self._last_error
+                weather = self._last_weather
 
             if snapshot is None:
                 return jsonify(
@@ -71,6 +78,7 @@ class PlanePortalServer:
 
             radar_points = []
             for record in snapshot["records"]:
+                serialized = self._serialize_record(record)
                 radar_points.append(
                     {
                         "bearing": record["bearing"],
@@ -80,6 +88,8 @@ class PlanePortalServer:
                         "is_featured": record is featured,
                         "heading": record["heading"],
                         "callsign": record["callsign"],
+                        "notable_tag": serialized["notable_tag"] if serialized else None,
+                        "notable_color": serialized["notable_color"] if serialized else None,
                     }
                 )
 
@@ -96,8 +106,177 @@ class PlanePortalServer:
                     "has_seen_aircraft": snapshot["has_seen_aircraft"],
                     "radius_miles": self._config.radius_miles,
                     "source_label": self._config.source_label(),
+                    "weather": weather,
                 }
             )
+
+    def _env_path(self):
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+
+    def _read_env(self):
+        """Read .env file and return dict of key=value pairs."""
+        env = {}
+        path = self._env_path()
+        if not os.path.exists(path):
+            return env
+        with open(path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, _, value = line.partition("=")
+                    env[key.strip()] = value.strip()
+        return env
+
+    def _write_env(self, updates):
+        """Update .env file, preserving comments and structure."""
+        path = self._env_path()
+        lines = []
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                lines = f.readlines()
+
+        written_keys = set()
+        new_lines = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#") and "=" in stripped:
+                key = stripped.partition("=")[0].strip()
+                if key in updates:
+                    new_lines.append(f"{key}={updates[key]}\n")
+                    written_keys.add(key)
+                else:
+                    new_lines.append(line)
+            else:
+                new_lines.append(line)
+
+        for key, value in updates.items():
+            if key not in written_keys:
+                new_lines.append(f"{key}={value}\n")
+
+        with open(path, "w") as f:
+            f.writelines(new_lines)
+
+    def _register_settings_routes(self):
+        SETTINGS_KEYS = {
+            "PLANEPORTAL_HOME_LATITUDE": "float",
+            "PLANEPORTAL_HOME_LONGITUDE": "float",
+            "PLANEPORTAL_RADIUS_MILES": "float",
+            "PLANEPORTAL_REFRESH_SECONDS": "int",
+            "PLANEPORTAL_RECENT_WINDOW_MINUTES": "int",
+            "OPENSKY_CLIENT_ID": "str",
+            "OPENSKY_CLIENT_SECRET": "str",
+        }
+
+        @self.app.route("/api/settings", methods=["GET"])
+        def get_settings():
+            env = self._read_env()
+            settings = {}
+            for key in SETTINGS_KEYS:
+                settings[key] = env.get(key, "")
+            return jsonify(settings)
+
+        @self.app.route("/api/settings", methods=["POST"])
+        def post_settings():
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "No data provided"}), 400
+
+            updates = {}
+            for key, kind in SETTINGS_KEYS.items():
+                if key not in data:
+                    continue
+                value = str(data[key]).strip()
+                if kind == "float":
+                    try:
+                        float(value)
+                    except ValueError:
+                        return jsonify({"error": f"Invalid number for {key}"}), 400
+                elif kind == "int":
+                    try:
+                        int(value)
+                    except ValueError:
+                        return jsonify({"error": f"Invalid integer for {key}"}), 400
+                updates[key] = value
+
+            if not updates:
+                return jsonify({"error": "No valid settings provided"}), 400
+
+            self._write_env(updates)
+
+            # Schedule a self-restart so the response gets sent first.
+            # systemd Restart=always will bring us back up.
+            def _restart():
+                time.sleep(1.5)
+                os.kill(os.getpid(), signal.SIGTERM)
+            threading.Thread(target=_restart, daemon=True).start()
+
+            return jsonify({"status": "saved", "restarting": True})
+
+    # Callsign prefixes that indicate military or government aircraft
+    _MILITARY_PREFIXES = (
+        "RCH", "EVAC", "GOLD", "DUKE", "KING", "REACH", "JAKE",
+        "TOPCAT", "SPAR", "SAM", "EXEC", "NAVY", "ARMY", "LANCE",
+        "FORTE", "VIPER", "HAWK", "BOLT", "DEMON", "RAGE",
+        "PAT", "ORDER", "BISON", "SKULL", "ROGUE",
+    )
+    _MILITARY_CALLSIGN_PATTERNS = (
+        "RCH", "CNV", "AIO", "RRR", "HKY",  # USAF tankers/transports
+        "MC", "PLF",  # USCG, Pilatus military
+    )
+
+    def _detect_notable(self, record, callsign, category_name, owner,
+                        aircraft_type):
+        """Return a notable tag and color, or (None, None)."""
+        cs = callsign.upper()
+        cat = category_name
+        own = owner.upper() if owner else ""
+        atype = (aircraft_type or "").upper()
+
+        # Military detection
+        for prefix in self._MILITARY_PREFIXES:
+            if cs.startswith(prefix):
+                return "MILITARY", "#E3655B"
+        for pat in self._MILITARY_CALLSIGN_PATTERNS:
+            if cs.startswith(pat):
+                return "MILITARY", "#E3655B"
+        mil_owners = (
+            "AIR FORCE", "NAVY", "MARINE", "ARMY", "COAST GUARD",
+            "USAF", "UNITED STATES", "DEPARTMENT OF", "NATO",
+        )
+        for mo in mil_owners:
+            if mo in own:
+                return "MILITARY", "#E3655B"
+        mil_types = ("C-17", "C-130", "KC-135", "KC-10", "KC-46",
+                     "F-16", "F-15", "F-18", "F-22", "F-35",
+                     "B-52", "B-1B", "B-2", "E-3", "E-6", "P-8",
+                     "C-5", "C-40", "V-22", "MQ-9", "RQ-4",
+                     "UH-60", "AH-64", "CH-47", "MH-60", "CV-22")
+        for mt in mil_types:
+            if mt in atype:
+                return "MILITARY", "#E3655B"
+
+        # Helicopter
+        if cat == "Rotorcraft":
+            return "HELO", "#F3BE4E"
+
+        # Heavy / widebody
+        if cat == "Heavy aircraft":
+            return "HEAVY", "#B7E3F5"
+
+        # UAV / drone
+        if cat == "UAV":
+            return "UAV", "#E3655B"
+
+        # Government / law enforcement
+        gov_keywords = ("POLICE", "SHERIFF", "STATE PATROL", "CBP",
+                        "FBI", "DHS", "SECRET SERVICE", "CUSTOMS")
+        for gk in gov_keywords:
+            if gk in own:
+                return "GOV", "#F3BE4E"
+
+        return None, None
 
     def _serialize_record(self, record):
         if record is None:
@@ -145,6 +324,11 @@ class PlanePortalServer:
         else:
             trend = "LVL"
 
+        notable_tag, notable_color = self._detect_notable(
+            record, record["callsign"], record["category_name"],
+            owner, aircraft_type,
+        )
+
         return {
             "icao24": record["icao24"],
             "callsign": record["callsign"],
@@ -162,6 +346,8 @@ class PlanePortalServer:
             "trend": trend,
             "category_name": record["category_name"],
             "registration": registration or record["icao24"].upper(),
+            "notable_tag": notable_tag,
+            "notable_color": notable_color,
         }
 
     def _fetch_cycle(self):
@@ -194,10 +380,13 @@ class PlanePortalServer:
             if enrich_note:
                 detail += f"  {enrich_note}"
 
+            weather = self._weather.fetch()
+
             with self._lock:
                 self._last_snapshot = snapshot
                 self._last_detail = detail
                 self._last_error = None
+                self._last_weather = weather
 
         except Exception as e:
             snapshot = self._tracker.snapshot(time.monotonic())
