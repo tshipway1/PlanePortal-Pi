@@ -89,6 +89,7 @@ class PlanePortalServer:
                         "heading": record["heading"],
                         "callsign": record["callsign"],
                         "icao24": record["icao24"],
+                        "category": record["category_name"],
                         "notable_tag": serialized["notable_tag"] if serialized else None,
                         "notable_color": serialized["notable_color"] if serialized else None,
                     }

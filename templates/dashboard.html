@@ -568,6 +568,94 @@
     ctx.fillStyle = '#F0F7F9';
     ctx.beginPath(); ctx.arc(CX, CY, 5, 0, Math.PI * 2); ctx.fill();
 
+    // ── Aircraft icon drawing functions ──────────────────
+    // All icons drawn pointing UP (heading 0°), caller rotates via ctx.rotate()
+    function drawJet(s) {
+      // Swept-wing jet silhouette
+      ctx.beginPath();
+      ctx.moveTo(0, -s);            // nose
+      ctx.lineTo(s*0.25, -s*0.3);
+      ctx.lineTo(s*0.9, s*0.1);     // right wingtip
+      ctx.lineTo(s*0.3, s*0.15);
+      ctx.lineTo(s*0.35, s*0.7);    // right tail
+      ctx.lineTo(0, s*0.55);        // tail center
+      ctx.lineTo(-s*0.35, s*0.7);   // left tail
+      ctx.lineTo(-s*0.3, s*0.15);
+      ctx.lineTo(-s*0.9, s*0.1);    // left wingtip
+      ctx.lineTo(-s*0.25, -s*0.3);
+      ctx.closePath();
+    }
+    function drawProp(s) {
+      // Straight-wing prop/light aircraft
+      ctx.beginPath();
+      ctx.moveTo(0, -s);            // nose
+      ctx.lineTo(s*0.2, -s*0.2);
+      ctx.lineTo(s*0.95, -s*0.05);  // right wingtip
+      ctx.lineTo(s*0.95, s*0.1);
+      ctx.lineTo(s*0.2, s*0.1);
+      ctx.lineTo(s*0.25, s*0.7);    // right tail
+      ctx.lineTo(0, s*0.55);
+      ctx.lineTo(-s*0.25, s*0.7);   // left tail
+      ctx.lineTo(-s*0.2, s*0.1);
+      ctx.lineTo(-s*0.95, s*0.1);   // left wingtip
+      ctx.lineTo(-s*0.95, -s*0.05);
+      ctx.lineTo(-s*0.2, -s*0.2);
+      ctx.closePath();
+    }
+    function drawHelo(s) {
+      // Helicopter: body + rotor disk
+      ctx.beginPath();
+      ctx.moveTo(0, -s*0.5);        // nose
+      ctx.lineTo(s*0.25, 0);
+      ctx.lineTo(s*0.15, s*0.6);
+      ctx.lineTo(s*0.4, s*0.8);     // right tail fin
+      ctx.lineTo(0, s*0.65);
+      ctx.lineTo(-s*0.4, s*0.8);    // left tail fin
+      ctx.lineTo(-s*0.15, s*0.6);
+      ctx.lineTo(-s*0.25, 0);
+      ctx.closePath();
+      // Rotor disk
+      ctx.moveTo(-s*0.8, -s*0.1);
+      ctx.lineTo(s*0.8, -s*0.1);
+      ctx.moveTo(0, -s*0.9);
+      ctx.lineTo(0, s*0.1);
+    }
+
+    function iconForCategory(cat) {
+      if (cat === 'Rotorcraft') return 'helo';
+      if (cat === 'Light aircraft' || cat === 'Ultralight' || cat === 'Glider') return 'prop';
+      return 'jet';
+    }
+
+    function drawAircraftIcon(px, py, heading, category, color, size, strokeColor, strokeWidth) {
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(heading * Math.PI / 180);
+      ctx.fillStyle = color;
+      const icon = iconForCategory(category);
+      if (icon === 'helo') drawHelo(size);
+      else if (icon === 'prop') drawProp(size);
+      else drawJet(size);
+      ctx.fill();
+      if (strokeColor) {
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeWidth || 2;
+        ctx.stroke();
+      }
+      // Rotor lines for helo
+      if (icon === 'helo') {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-size*0.8, -size*0.1);
+        ctx.lineTo(size*0.8, -size*0.1);
+        ctx.moveTo(0, -size*0.9);
+        ctx.lineTo(0, size*0.1);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     // Plot aircraft
     if (!points) return;
     for (const pt of points) {
@@ -578,44 +666,23 @@
       if (pt.icao24) radarHits.push({icao24: pt.icao24, px, py});
 
       const isFeatured = pinnedIcao ? (pt.icao24 === pinnedIcao) : pt.is_featured;
+      const cat = pt.category || 'Aircraft';
       if (isFeatured) {
-        // Heading vector
-        const hAngle = pt.heading * Math.PI / 180;
-        const hx = px + Math.sin(hAngle) * 26;
-        const hy = py - Math.cos(hAngle) * 26;
-        ctx.strokeStyle = '#F0F7F9';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(hx, hy); ctx.stroke();
-
-        // Featured dot (larger, red outline)
-        ctx.fillStyle = altColor(pt.altitude_ft);
-        ctx.strokeStyle = '#E3655B';
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI * 2);
-        ctx.fill(); ctx.stroke();
-
+        drawAircraftIcon(px, py, pt.heading, cat, altColor(pt.altitude_ft), 14, '#E3655B', 3);
         // Callsign label
         ctx.fillStyle = '#F0F7F9';
         ctx.font = 'bold 13px monospace';
         ctx.textAlign = 'left';
-        ctx.fillText(pt.callsign, px + 14, py + 5);
+        ctx.fillText(pt.callsign, px + 16, py + 5);
+      } else if (pt.notable_tag) {
+        drawAircraftIcon(px, py, pt.heading, cat, pt.notable_color || '#F3BE4E', 10, null, 0);
+        ctx.fillStyle = pt.notable_color || '#F3BE4E';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(pt.notable_tag, px + 12, py + 4);
       } else {
-        // Notable aircraft get a diamond shape and label
-        if (pt.notable_tag) {
-          ctx.fillStyle = pt.notable_color || '#F3BE4E';
-          ctx.save();
-          ctx.translate(px, py);
-          ctx.rotate(Math.PI / 4);
-          ctx.fillRect(-6, -6, 12, 12);
-          ctx.restore();
-          ctx.fillStyle = pt.notable_color || '#F3BE4E';
-          ctx.font = 'bold 11px monospace';
-          ctx.textAlign = 'left';
-          ctx.fillText(pt.notable_tag, px + 10, py + 4);
-        } else {
-          ctx.fillStyle = pt.is_live ? altColor(pt.altitude_ft) : '#95A9B5';
-          ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2); ctx.fill();
-        }
+        const color = pt.is_live ? altColor(pt.altitude_ft) : '#95A9B5';
+        drawAircraftIcon(px, py, pt.heading, cat, color, 9, null, 0);
       }
     }
   }
