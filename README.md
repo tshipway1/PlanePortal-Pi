@@ -2,6 +2,8 @@
 
 Real-time aircraft tracking dashboard for Raspberry Pi with a 7" touchscreen display.
 
+![PlanePortal Pi Dashboard](screenshot.png)
+
 Ported from the original [PlanePortal](https://github.com/kevinl95/PlanePortal) CircuitPython project for Adafruit PyPortal. This version runs on a Raspberry Pi as a Flask web app displayed in fullscreen Chromium kiosk mode.
 
 ## What it does
