@@ -519,6 +519,7 @@
 
   let radarHits = [];  // [{icao24, px, py}] for tap detection
   let lastOthers = []; // stash for selectCard
+  let lastRadarPoints = []; // stash for radar redraw
 
   function drawRadar(points) {
     radarHits = [];
@@ -562,7 +563,8 @@
       const py = CY - Math.cos(angle) * CR * frac;
       if (pt.icao24) radarHits.push({icao24: pt.icao24, px, py});
 
-      if (pt.is_featured) {
+      const isFeatured = pinnedIcao ? (pt.icao24 === pinnedIcao) : pt.is_featured;
+      if (isFeatured) {
         // Heading vector
         const hAngle = pt.heading * Math.PI / 180;
         const hx = px + Math.sin(hAngle) * 26;
@@ -726,6 +728,7 @@
     if (ac) renderFeatured(ac);
     else if (!pinnedIcao) poll();
     if (others) renderRecent(others);
+    drawRadar(lastRadarPoints);
   }
 
   // ── Render recent sidebar ──────────────────────────────
@@ -800,8 +803,9 @@
     document.getElementById('wxWind').textContent = windDir + ' ' + windSpd + gust;
     document.getElementById('wxVis').textContent =
       wx.visibility_m != null ? (wx.visibility_m >= 9999 ? '>10km' : (wx.visibility_m / 1000).toFixed(1) + 'km') : '--';
+    const cc = wx.cloud_cover_pct;
     document.getElementById('wxClouds').textContent =
-      wx.cloud_cover_pct != null ? wx.cloud_cover_pct + '%' : '--';
+      cc == null ? '--' : cc <= 10 ? 'Clear' : cc <= 30 ? 'Few' : cc <= 60 ? 'Scattered' : cc <= 85 ? 'Broken' : 'Overcast';
   }
 
   // ── Poll loop ──────────────────────────────────────────
@@ -838,7 +842,8 @@
       if (pinnedIcao && !allAircraft[pinnedIcao]) pinnedIcao = null;
 
       lastOthers = data.others || [];
-      drawRadar(data.radar_points);
+      lastRadarPoints = data.radar_points || [];
+      drawRadar(lastRadarPoints);
       const displayFeatured = pinnedIcao ? allAircraft[pinnedIcao] : data.featured;
       renderFeatured(displayFeatured);
       renderRecent(lastOthers);
