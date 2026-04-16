@@ -568,39 +568,23 @@
     ctx.fillStyle = '#F0F7F9';
     ctx.beginPath(); ctx.arc(CX, CY, 5, 0, Math.PI * 2); ctx.fill();
 
-    // ── SVG aircraft icon system ────────────────────────────
-    const ICON_TYPES = ['airliner','cessna','heavy_2e','heavy_4e','helicopter',
-                        'hi_perf','jet_nonswept','jet_swept','twin_large','twin_small','unknown'];
-    const svgImages = {};     // type → loaded Image
-    const iconCache = {};     // type_color_size → offscreen canvas
-    let iconsReady = false;
-
-    // Pre-load all SVG images
-    let loadCount = 0;
-    ICON_TYPES.forEach(t => {
-      const img = new Image();
-      img.onload = function() {
-        svgImages[t] = img;
-        loadCount++;
-        if (loadCount >= ICON_TYPES.length) iconsReady = true;
-      };
-      img.src = '/static/icons/' + t + '.svg';
-    });
+    // ── SVG aircraft icon system (inline, no network fetch) ─
+    const SVG_TEMPLATES = {{ svg_icons | tojson }};
+    const iconCache = {};  // key → ready HTMLImageElement
 
     function getColoredIcon(type, color, size) {
       const key = type + '_' + color + '_' + size;
       if (iconCache[key]) return iconCache[key];
-      const baseImg = svgImages[type] || svgImages['airliner'];
-      if (!baseImg) return null;
-      const oc = document.createElement('canvas');
-      oc.width = size; oc.height = size;
-      const octx = oc.getContext('2d');
-      octx.drawImage(baseImg, 0, 0, size, size);
-      octx.globalCompositeOperation = 'source-in';
-      octx.fillStyle = color;
-      octx.fillRect(0, 0, size, size);
-      iconCache[key] = oc;
-      return oc;
+
+      const tmpl = SVG_TEMPLATES[type] || SVG_TEMPLATES['airliner'];
+      if (!tmpl) return null;
+
+      const colored = tmpl.replace(/#FFFFFF/gi, color);
+      const dataUri = 'data:image/svg+xml;base64,' + btoa(colored);
+      const img = new Image();
+      img.src = dataUri;
+      iconCache[key] = img;
+      return img;
     }
 
     function drawAircraftSVG(px, py, heading, type, color, size, strokeColor) {

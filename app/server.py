@@ -10,6 +10,8 @@ import signal
 import threading
 import time
 
+from glob import glob
+
 from flask import Flask, jsonify, render_template, request
 
 from app.adsbdb_client import ADSBDBClient
@@ -40,11 +42,21 @@ class PlanePortalServer:
         self._register_routes()
         self._register_settings_routes()
         self._start_time = str(int(time.time()))
+        self._svg_icons = self._load_svg_icons()
 
         @self.app.after_request
         def no_cache(response):
             response.headers["Cache-Control"] = "no-store"
             return response
+
+    def _load_svg_icons(self):
+        icons = {}
+        icons_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "icons")
+        for path in glob(os.path.join(icons_dir, "*.svg")):
+            name = os.path.splitext(os.path.basename(path))[0]
+            with open(path) as f:
+                icons[name] = f.read().replace("\n", "")
+        return icons
 
     def _register_routes(self):
         @self.app.route("/")
@@ -54,6 +66,7 @@ class PlanePortalServer:
                 "dashboard.html",
                 config=self._config,
                 server_version=self._start_time,
+                svg_icons=self._svg_icons,
                 validation_error=validation_error,
             )
 
