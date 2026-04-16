@@ -19,17 +19,17 @@ Ported from the original [PlanePortal](https://github.com/kevinl95/PlanePortal) 
 ## What the screen shows
 
 - **Header**: app title, live/stale status indicator, data source, settings gear
-- **Radar panel** (left): aircraft plotted by bearing and distance, color-coded by altitude; notable aircraft shown as diamonds with labels
-- **Weather panel** (below radar): current conditions — temperature, wind, visibility, cloud cover
-- **Featured aircraft card** (center): callsign, type, route, operator, distance, altitude, speed, heading, vertical rate, climb/descent trend, and notable badge
-- **Recent sidebar** (right): other nearby aircraft with key details — tap any card to view its full details in the featured panel
+- **Featured aircraft** (left): callsign, type, route, operator, distance, altitude, speed, heading, vertical rate, climb/descent trend, and notable badge
+- **Weather** (left, below featured): current conditions with location name — temperature, wind, visibility, cloud cover (shown as aviation terms: Clear/Few/Scattered/Broken/Overcast)
+- **Radar** (center): aircraft plotted by bearing and distance, color-coded by altitude; notable aircraft shown as diamonds with labels; tap any dot to select it
+- **Aircraft list** (right): scrollable list of all tracked aircraft — tap any card to view its full details
 - **Footer**: live/recent counts and status notes
 
 ### Touch interaction
 
-On a touchscreen display, tap an aircraft in the recent sidebar to see its full details in the center panel. Tap "TAP TO DESELECT" or tap the same card again to return to the default view (closest aircraft featured).
+Tap any aircraft dot on the radar or any card in the aircraft list to view its full details in the featured panel. Tap "TAP TO DESELECT" or tap the same item again to return to the default view (closest aircraft featured). The aircraft list is scrollable by swiping.
 
-Tap the gear icon in the header to open the settings panel. All settings can be edited with the built-in on-screen keyboard — no physical keyboard required. Saving restarts the service automatically.
+Tap the gear icon in the header to open the settings panel. All settings can be edited with the built-in on-screen keyboard — no physical keyboard required. Saving writes to `.env` and restarts the service automatically.
 
 ### Notable aircraft
 
@@ -160,6 +160,7 @@ The app runs a Flask web server with a background thread that periodically polls
 - **OpenSky Network** — live aircraft positions, altitude, speed, heading, vertical rate
 - **ADSBDB** — aircraft registration, type, route, airline, operator (best-effort)
 - **Open-Meteo** — current weather conditions (free, no API key required)
+- **OpenStreetMap Nominatim** — reverse geocoding for weather location name
 
 ## Differences from original PlanePortal
 
@@ -193,6 +194,10 @@ The app runs a Flask web server with a background thread that periodically polls
 
 **Chromium won't install?**
 - The setup script auto-detects the correct package name (`chromium` on Bookworm+, `chromium-browser` on older Pi OS)
+
+**Chromium asks to unlock keyring on boot?**
+- The kiosk autostart uses `--password-store=basic` to skip the GNOME keyring prompt
+- If you set up kiosk mode manually, add that flag to your Chromium command
 
 ## Credits
 
