@@ -67,45 +67,46 @@
   /* ── Main content ─────────────────────────────────────── */
   .content {
     display:grid; padding:8px;
-    grid-template-columns: 320px 1fr 220px;
+    grid-template-columns: 220px 1fr 200px;
     gap:8px; overflow:hidden;
   }
 
-  /* ── Radar panel (left) ───────────────────────────────── */
+  /* ── Radar panel (center) ──────────────────────────────── */
   .radar-panel {
     background:var(--sky-band); border-radius:6px;
     display:flex; flex-direction:column; align-items:center;
-    padding:8px; position:relative;
+    padding:6px; position:relative; overflow:hidden;
   }
   .radar-title {
     font-size:10px; color:var(--text-muted); letter-spacing:1px;
-    margin-bottom:4px;
+    margin-bottom:2px; flex-shrink:0;
   }
   .radar-container {
-    position:relative; width:300px; height:300px;
+    position:relative; flex:1; aspect-ratio:1;
+    max-height:100%; max-width:100%;
   }
   canvas#radar {
-    width:300px; height:300px;
+    width:100%; height:100%;
     border-radius:50%;
   }
   .radar-legend {
-    display:flex; gap:12px; margin-top:6px; font-size:9px;
-    color:var(--text-muted);
+    display:flex; gap:12px; margin-top:4px; font-size:9px;
+    color:var(--text-muted); flex-shrink:0;
   }
   .legend-dot {
     width:8px; height:8px; border-radius:50%;
     display:inline-block; margin-right:3px; vertical-align:middle;
   }
   .radar-stats {
-    font-size:11px; color:var(--text-muted); margin-top:6px;
-    text-align:center;
+    font-size:11px; color:var(--text-muted); margin-top:2px;
+    text-align:center; flex-shrink:0;
   }
   .radar-stats span { color:var(--accent); font-weight:bold; }
 
-  /* ── Weather panel (below radar) ─────────────────────── */
+  /* ── Weather panel ────────────────────────────────────── */
   .weather-panel {
-    background:var(--sky-band); border-radius:6px; padding:6px 10px;
-    margin-top:4px;
+    background:var(--sky-band); border-radius:6px; padding:6px 8px;
+    flex-shrink:0;
   }
   .weather-title {
     font-size:9px; color:var(--text-muted); letter-spacing:1px;
@@ -132,20 +133,26 @@
   }
   .recent-card.notable { border-left-width:3px; }
 
-  /* ── Featured card (center) ───────────────────────────── */
+  /* ── Left column (featured + weather) ──────────────────── */
+  .left-column {
+    display:flex; flex-direction:column; overflow:hidden; gap:0;
+  }
+
+  /* ── Featured card (left) ────────────────────────────── */
   .featured-panel {
-    background:var(--card); border-radius:6px; padding:12px;
-    display:flex; flex-direction:column; gap:6px; overflow:hidden;
+    background:var(--card); border-radius:6px; padding:8px;
+    display:flex; flex-direction:column; gap:3px; overflow:hidden;
+    flex:1;
   }
   .featured-header {
-    display:flex; align-items:center; gap:10px;
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
   }
   .callsign {
-    font-size:28px; font-weight:bold; color:var(--text);
+    font-size:18px; font-weight:bold; color:var(--text);
     letter-spacing:2px;
   }
   .badge {
-    font-size:10px; font-weight:bold; padding:2px 8px;
+    font-size:8px; font-weight:bold; padding:1px 5px;
     border-radius:3px; letter-spacing:1px;
   }
   .badge-live   { background:var(--accent); color:var(--bg); }
@@ -155,42 +162,48 @@
   .badge-lvl    { background:var(--text-muted); color:var(--bg); }
 
   .type-line {
-    font-size:13px; color:var(--text-muted);
+    font-size:10px; color:var(--text-muted);
   }
   .route-line {
-    font-size:16px; color:var(--accent); font-weight:bold;
+    font-size:12px; color:var(--accent); font-weight:bold;
     letter-spacing:1px;
   }
-  .route-line.no-route { color:var(--text-muted); font-size:12px; }
+  .route-line.no-route { color:var(--text-muted); font-size:10px; }
   .owner-line {
-    font-size:11px; color:var(--text-muted); font-style:italic;
+    font-size:9px; color:var(--text-muted); font-style:italic;
   }
 
   .metrics-grid {
     display:grid; grid-template-columns: repeat(3, 1fr);
-    gap:6px; margin-top:4px;
+    gap:4px; margin-top:2px;
   }
   .metric-box {
     background:var(--card-alt); border-radius:4px;
-    padding:6px 8px; text-align:center;
+    padding:3px 4px; text-align:center;
   }
   .metric-value {
-    font-size:18px; font-weight:bold; color:var(--text);
+    font-size:13px; font-weight:bold; color:var(--text);
   }
   .metric-label {
-    font-size:9px; color:var(--text-muted); letter-spacing:1px;
+    font-size:7px; color:var(--text-muted); letter-spacing:1px;
   }
 
   .metrics-secondary {
     display:grid; grid-template-columns: repeat(3, 1fr);
-    gap:6px;
+    gap:4px;
   }
   .metric-sm {
     background:var(--card-alt); border-radius:4px;
-    padding:4px 6px; text-align:center;
+    padding:2px 4px; text-align:center;
   }
-  .metric-sm .metric-value { font-size:14px; }
-  .metric-sm .metric-label { font-size:8px; }
+  .metric-sm .metric-value { font-size:11px; }
+  .metric-sm .metric-label { font-size:7px; }
+
+  /* ── Section divider ─────────────────────────────────── */
+  .section-divider {
+    height:1px; background:var(--accent-dim); margin:6px 0;
+    flex-shrink:0;
+  }
 
   /* ── Recent sidebar (right) ───────────────────────────── */
   .recent-panel {
@@ -438,24 +451,15 @@
       </div>
     </div>
     {% else %}
-    <!-- Left column: Radar + Weather -->
-    <div style="display:flex;flex-direction:column;gap:4px;overflow:hidden;">
-      <div class="radar-panel" style="flex-shrink:0;">
-        <div class="radar-title">RADAR &mdash; {{ config.radius_miles }} MI RADIUS</div>
-        <div class="radar-container">
-          <canvas id="radar" width="600" height="600"></canvas>
-        </div>
-        <div class="radar-legend">
-          <span><span class="legend-dot" style="background:var(--alt-low)"></span>&lt;12K</span>
-          <span><span class="legend-dot" style="background:var(--alt-mid)"></span>12-28K</span>
-          <span><span class="legend-dot" style="background:var(--alt-high)"></span>&gt;28K</span>
-          <span><span class="legend-dot" style="background:var(--error)"></span>Featured</span>
-        </div>
-        <div class="radar-stats">
-          <span id="liveCount">0</span> live &middot;
-          <span id="recentCount">0</span> recent
+    <!-- Left column: Featured Aircraft + Weather -->
+    <div class="left-column">
+      <div class="featured-panel" id="featuredPanel">
+        <div class="state-message" id="waitingState">
+          <h2>SCANNING SKY</h2>
+          <p>Waiting for first nearby aircraft...</p>
         </div>
       </div>
+      <div class="section-divider"></div>
       <div class="weather-panel" id="weatherPanel">
         <div class="weather-title">WEATHER — <span id="wxLocation">--</span></div>
         <div class="weather-condition" id="wxCondition">--</div>
@@ -468,17 +472,27 @@
       </div>
     </div>
 
-    <!-- Featured Aircraft -->
-    <div class="featured-panel" id="featuredPanel">
-      <div class="state-message" id="waitingState">
-        <h2>SCANNING SKY</h2>
-        <p>Waiting for first nearby aircraft...</p>
+    <!-- Center: Radar -->
+    <div class="radar-panel">
+      <div class="radar-title">RADAR &mdash; {{ config.radius_miles }} MI RADIUS</div>
+      <div class="radar-container">
+        <canvas id="radar" width="600" height="600"></canvas>
+      </div>
+      <div class="radar-legend">
+        <span><span class="legend-dot" style="background:var(--alt-low)"></span>&lt;12K</span>
+        <span><span class="legend-dot" style="background:var(--alt-mid)"></span>12-28K</span>
+        <span><span class="legend-dot" style="background:var(--alt-high)"></span>&gt;28K</span>
+        <span><span class="legend-dot" style="background:var(--error)"></span>Featured</span>
+      </div>
+      <div class="radar-stats">
+        <span id="liveCount">0</span> live &middot;
+        <span id="recentCount">0</span> recent
       </div>
     </div>
 
-    <!-- Recent Aircraft Sidebar -->
+    <!-- Right: Recent Aircraft -->
     <div class="recent-panel">
-      <div class="recent-title">RECENT SKY</div>
+      <div class="recent-title">AIRCRAFT</div>
       <div id="recentList">
         <div class="recent-empty">Waiting for nearby aircraft</div>
       </div>
