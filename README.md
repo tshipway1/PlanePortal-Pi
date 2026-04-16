@@ -164,21 +164,6 @@ The app runs a Flask web server with a background thread that periodically polls
 - **Open-Meteo** — current weather conditions (free, no API key required)
 - **OpenStreetMap Nominatim** — reverse geocoding for weather location name
 
-## Differences from original PlanePortal
-
-| | Original (PyPortal) | Pi Version |
-|---|---|---|
-| Platform | CircuitPython on Adafruit PyPortal | Python 3 on Raspberry Pi OS |
-| Display | 320x240 built-in LCD | Any size (designed for 800x480) |
-| UI | CircuitPython displayio | Flask + HTML/CSS/Canvas |
-| Networking | ESP32 SPI WiFi | Native WiFi/Ethernet |
-| Rendering | Bitmap pixel drawing | Canvas radar + DOM layout |
-| Touch | None | Tap aircraft to view details |
-| Weather | None | Live conditions from Open-Meteo |
-| Notable detection | None | Military, helo, heavy, UAV, gov |
-| Settings | Edit config files | On-screen touch UI |
-| Access | Device-only | Any browser on the network |
-
 ## Troubleshooting
 
 **No aircraft showing up?**
