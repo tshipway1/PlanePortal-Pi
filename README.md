@@ -1,14 +1,14 @@
 # Plane Portal Pi
 
-Real-time aircraft tracking dashboard for Raspberry Pi with a 7" display.
+Real-time aircraft tracking dashboard for Raspberry Pi with a 7" touchscreen display.
 
-Ported from the original [PlanePortal](https://github.com/kevinl95/PlanePortal) CircuitPython project for Adafruit PyPortal. This version runs on a Raspberry Pi as a Flask web app displayed in fullscreen Chromium kiosk mode — designed for an 800x480 screen.
+Ported from the original [PlanePortal](https://github.com/kevinl95/PlanePortal) CircuitPython project for Adafruit PyPortal. This version runs on a Raspberry Pi as a Flask web app displayed in fullscreen Chromium kiosk mode.
 
 ## What it does
 
 - Polls OpenSky Network for live aircraft state vectors near a configured watch point
-- Applies a true circular radius filter, defaulting to 3 miles
-- Keeps a rolling recent-aircraft memory so planes remain visible after passing through the radius
+- Applies a true circular radius filter (default 3 miles)
+- Keeps a rolling recent-aircraft memory so planes remain visible after passing through
 - Enriches aircraft with ADSBDB metadata: registration, aircraft type, airline, and route
 - Renders an aviation-style dashboard with a live radar view, featured aircraft card, metrics, and a recent-traffic sidebar
 - Auto-refreshes via AJAX — no page reloads needed
@@ -18,8 +18,12 @@ Ported from the original [PlanePortal](https://github.com/kevinl95/PlanePortal) 
 - **Header**: app title, live/stale status indicator, data source
 - **Radar panel** (left): aircraft plotted by bearing and distance, color-coded by altitude
 - **Featured aircraft card** (center): callsign, type, route, operator, distance, altitude, speed, heading, vertical rate, and climb/descent trend
-- **Recent sidebar** (right): other nearby aircraft with key details
+- **Recent sidebar** (right): other nearby aircraft with key details — tap any card to view its full details in the featured panel
 - **Footer**: live/recent counts and status notes
+
+### Touch interaction
+
+On a touchscreen display, tap an aircraft in the recent sidebar to see its full details in the center panel. Tap "TAP TO DESELECT" or tap the same card again to return to the default view (closest aircraft featured).
 
 ### Altitude color coding
 
@@ -31,8 +35,8 @@ Ported from the original [PlanePortal](https://github.com/kevinl95/PlanePortal) 
 
 ## Hardware needed
 
-- Raspberry Pi (3B+, 4, 5, or Zero 2W all work)
-- 7" display — the official Raspberry Pi touchscreen (800x480) or any HDMI 7" display
+- Raspberry Pi (3B+, 4, 5, or Zero 2W)
+- 7" display — the official Raspberry Pi touchscreen (800x480) or any HDMI display
 - WiFi or Ethernet connection
 - SD card with Raspberry Pi OS (Desktop edition)
 
@@ -49,12 +53,18 @@ chmod +x setup-pi.sh
 ./setup-pi.sh
 ```
 
-The setup script installs Python dependencies in a virtual environment, creates a systemd service, and configures kiosk-mode autostart.
+The setup script:
+- Installs system packages (Python 3, Chromium, unclutter) — auto-detects the correct Chromium package for your Pi OS version
+- Creates a Python virtual environment and installs dependencies
+- Generates a `.env` config file if one doesn't exist
+- Installs a systemd service (`planeportal.service`)
+- Configures Chromium kiosk-mode autostart
 
 ### 2. Configure
 
+Edit `.env` with your location and (optionally) OpenSky credentials:
+
 ```bash
-cp .env.example .env
 nano .env
 ```
 
@@ -96,6 +106,12 @@ journalctl -u planeportal -f
 
 Open `http://localhost:5000` in a browser, or reboot the Pi for automatic kiosk-mode display.
 
+To launch Chromium on the Pi's screen from an SSH session:
+
+```bash
+DISPLAY=:0 chromium --kiosk --incognito http://localhost:5000
+```
+
 ### Manual run (without systemd)
 
 ```bash
@@ -103,11 +119,7 @@ source venv/bin/activate
 python run.py
 ```
 
-## How it works
-
-The app runs a Flask web server with a background thread that periodically polls the OpenSky Network API. The frontend is a single HTML page that polls a `/api/snapshot` JSON endpoint every 5 seconds and renders everything client-side with vanilla JavaScript and Canvas.
-
-### Architecture
+## Architecture
 
 ```
 run.py                  <- Entry point: loads .env, starts Flask
@@ -118,8 +130,11 @@ app/
   adsbdb_client.py      <- Aircraft metadata enrichment + caching
   tracker.py            <- Radius filtering, distance math, flight registry
 templates/
-  dashboard.html        <- Full dashboard UI (HTML + CSS + JS)
+  dashboard.html        <- Full dashboard UI (HTML + CSS + JS + Canvas)
+setup-pi.sh             <- One-step Pi installer
 ```
+
+The app runs a Flask web server with a background thread that periodically polls the OpenSky Network API. The frontend is a single HTML page that polls a `/api/snapshot` JSON endpoint every 5 seconds and renders everything client-side with vanilla JavaScript and Canvas.
 
 ### Data sources
 
@@ -131,17 +146,18 @@ templates/
 | | Original (PyPortal) | Pi Version |
 |---|---|---|
 | Platform | CircuitPython on Adafruit PyPortal | Python 3 on Raspberry Pi OS |
-| Display | 320x240 built-in LCD | 800x480 (7" Pi screen) |
+| Display | 320x240 built-in LCD | Any size (designed for 800x480) |
 | UI | CircuitPython displayio | Flask + HTML/CSS/Canvas |
 | Networking | ESP32 SPI WiFi | Native WiFi/Ethernet |
 | Rendering | Bitmap pixel drawing | Canvas radar + DOM layout |
+| Touch | None | Tap aircraft to view details |
 | Access | Device-only | Any browser on the network |
 
 ## Troubleshooting
 
 **No aircraft showing up?**
 - Verify your latitude/longitude in `.env` are correct
-- Try increasing `PLANEPORTAL_RADIUS_MILES` to 5 or 10
+- Try increasing `PLANEPORTAL_RADIUS_MILES` to 10 or higher
 - Check that OpenSky API is reachable: `curl https://opensky-network.org/api/states/all?lamin=47&lomin=-123&lamax=48&lomax=-122`
 
 **Rate limited?**
@@ -149,8 +165,11 @@ templates/
 - Increase `PLANEPORTAL_REFRESH_SECONDS` to 180 or higher
 
 **Screen not filling the display?**
-- Chromium kiosk mode should handle this automatically
+- The dashboard uses viewport-relative sizing and should fill any screen
 - If using HDMI, check `/boot/config.txt` display settings match your panel resolution
+
+**Chromium won't install?**
+- The setup script auto-detects the correct package name (`chromium` on Bookworm+, `chromium-browser` on older Pi OS)
 
 ## Credits
 

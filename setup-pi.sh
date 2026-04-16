@@ -16,7 +16,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # ── 1. System packages ──────────────────────────────────
 echo "▶ Installing system dependencies..."
 sudo apt-get update -qq
-sudo apt-get install -y -qq python3 python3-pip python3-venv chromium-browser unclutter
+
+# Bookworm+ ships "chromium"; older Pi OS uses "chromium-browser"
+if apt-cache show chromium >/dev/null 2>&1; then
+    CHROMIUM_PKG=chromium
+else
+    CHROMIUM_PKG=chromium-browser
+fi
+sudo apt-get install -y -qq python3 python3-pip python3-venv "$CHROMIUM_PKG" unclutter
 
 # ── 2. Python virtual environment ────────────────────────
 echo "▶ Creating Python virtual environment..."
@@ -28,8 +35,29 @@ pip install -r requirements.txt
 
 # ── 3. .env file ─────────────────────────────────────────
 if [ ! -f .env ]; then
-    echo "▶ Creating .env from example..."
-    cp .env.example .env
+    echo "▶ Creating .env from template..."
+    cat > .env <<'ENVEOF'
+# PlanePortal Pi Configuration
+
+# Required: your watch-point coordinates (decimal degrees)
+PLANEPORTAL_HOME_LATITUDE=0.0
+PLANEPORTAL_HOME_LONGITUDE=0.0
+
+# OpenSky Network API credentials (optional — works without, but rate-limited)
+OPENSKY_CLIENT_ID=
+OPENSKY_CLIENT_SECRET=
+
+# Optional settings with sensible defaults
+PLANEPORTAL_RADIUS_MILES=10
+PLANEPORTAL_REFRESH_SECONDS=120
+PLANEPORTAL_RECENT_WINDOW_MINUTES=10
+PLANEPORTAL_ENRICHMENT_LIMIT=4
+PLANEPORTAL_ADSB_CACHE_SECONDS=1800
+PLANEPORTAL_DEBUG=0
+
+# Server port (default 5000)
+PORT=5000
+ENVEOF
     echo ""
     echo "  ⚠  IMPORTANT: Edit .env with your coordinates and OpenSky credentials."
     echo "     nano $SCRIPT_DIR/.env"
@@ -63,12 +91,15 @@ sudo systemctl enable planeportal.service
 # ── 5. Kiosk mode autostart (Chromium fullscreen) ────────
 echo "▶ Setting up kiosk autostart..."
 mkdir -p "$HOME/.config/autostart"
+
+# Use whichever chromium binary is available
+CHROMIUM_BIN="$(command -v chromium 2>/dev/null || command -v chromium-browser 2>/dev/null)"
 cat > "$HOME/.config/autostart/planeportal-kiosk.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=PlanePortal Kiosk
 Comment=Open PlanePortal dashboard in fullscreen Chromium
-Exec=bash -c 'sleep 8 && unclutter -idle 0.5 -root & chromium-browser --noerrdialogs --disable-infobars --kiosk --incognito http://localhost:5000'
+Exec=bash -c 'sleep 8 && unclutter -idle 0.5 -root & $CHROMIUM_BIN --noerrdialogs --disable-infobars --kiosk --incognito http://localhost:5000'
 X-GNOME-Autostart-enabled=true
 EOF
 

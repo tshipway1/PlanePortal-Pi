@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=800, height=480, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no">
 <title>Plane Portal</title>
 <style>
   /* ── Reset & Base ─────────────────────────────────────── */
   * { margin:0; padding:0; box-sizing:border-box; }
   ::-webkit-scrollbar { display:none; }
   html, body {
-    width:800px; height:480px; overflow:hidden;
+    width:100vw; height:100vh; overflow:hidden;
     font-family: 'Courier New', 'Liberation Mono', monospace;
     background:#07131F; color:#F0F7F9;
   }
@@ -33,7 +33,7 @@
 
   /* ── Layout ───────────────────────────────────────────── */
   .dashboard {
-    display:grid; width:800px; height:480px;
+    display:grid; width:100vw; height:100vh;
     grid-template-rows: 44px 1fr 36px;
     grid-template-columns: 1fr;
   }
@@ -183,9 +183,16 @@
   .recent-card .rc-route {
     font-size:10px; color:var(--accent);
   }
+  .recent-card { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .recent-card:active { opacity:0.7; }
+  .recent-card.selected { border-left-color:var(--error); background:var(--card-alt); }
   .recent-empty {
     font-size:11px; color:var(--text-muted); text-align:center;
     padding:20px 0;
+  }
+  .pin-hint {
+    font-size:9px; color:var(--text-muted); text-align:center;
+    letter-spacing:1px; cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
 
   /* ── Footer ───────────────────────────────────────────── */
@@ -287,6 +294,10 @@
   const REFRESH_MS = {{ config.refresh_seconds * 1000 }};
   const POLL_MS = 5000;
   const RADIUS = {{ config.radius_miles }};
+
+  // ── Touch-to-select state ─────────────────────────────
+  let pinnedIcao = null;       // icao24 of user-selected aircraft, null = auto
+  let allAircraft = {};        // icao24 → full record from last poll
 
   // ── Radar drawing ──────────────────────────────────────
   const canvas = document.getElementById('radar');
@@ -390,15 +401,20 @@
   function renderFeatured(f) {
     const panel = document.getElementById('featuredPanel');
     if (!f) {
+      pinnedIcao = null;
       panel.innerHTML = '<div class="state-message"><h2>QUIET SKY</h2><p>No aircraft nearby</p></div>';
       return;
     }
 
+    const isPinned = pinnedIcao !== null;
     const statusClass = f.is_live ? 'badge-live' : 'badge-recent';
     const trendClass = f.trend === 'CLB' ? 'badge-clb' : f.trend === 'DSC' ? 'badge-dsc' : 'badge-lvl';
     const routeHtml = f.route
       ? `<div class="route-line">${esc(f.route)}</div>`
       : `<div class="route-line no-route">NO ROUTE</div>`;
+    const pinHint = isPinned
+      ? '<div class="pin-hint" id="unpinBtn">TAP TO DESELECT</div>'
+      : '';
 
     panel.innerHTML = `
       <div class="featured-header">
@@ -437,7 +453,15 @@
           <div class="metric-label">FT/MIN</div>
         </div>
       </div>
+      ${pinHint}
     `;
+
+    if (isPinned) {
+      document.getElementById('unpinBtn').addEventListener('click', function() {
+        pinnedIcao = null;
+        poll();
+      });
+    }
   }
 
   // ── Render recent sidebar ──────────────────────────────
@@ -448,12 +472,29 @@
       return;
     }
     list.innerHTML = others.map(r => `
-      <div class="recent-card ${r.is_live ? 'live' : ''}">
+      <div class="recent-card ${r.is_live ? 'live' : ''} ${pinnedIcao === r.icao24 ? 'selected' : ''}"
+           data-icao="${esc(r.icao24)}">
         <div class="rc-callsign">${esc(r.callsign)}</div>
         <div class="rc-detail">${r.distance_miles} mi &middot; ${fmtAlt(r.altitude_ft)} ft &middot; ${r.status_text}</div>
         <div class="rc-route">${r.route ? esc(r.route) : 'NO ROUTE'}</div>
       </div>
     `).join('');
+
+    list.querySelectorAll('.recent-card[data-icao]').forEach(card => {
+      card.addEventListener('click', function() {
+        const icao = this.dataset.icao;
+        if (pinnedIcao === icao) {
+          pinnedIcao = null;
+        } else {
+          pinnedIcao = icao;
+        }
+        const ac = allAircraft[pinnedIcao];
+        if (ac) {
+          renderFeatured(ac);
+        }
+        renderRecent(others);
+      });
+    });
   }
 
   // ── HTML escape ────────────────────────────────────────
@@ -498,8 +539,17 @@
         document.getElementById('sourceLabel').textContent = data.source_label;
       }
 
+      // Store all aircraft for touch-to-select
+      allAircraft = {};
+      if (data.featured) allAircraft[data.featured.icao24] = data.featured;
+      if (data.others) data.others.forEach(r => { allAircraft[r.icao24] = r; });
+
+      // If pinned aircraft is gone, unpin
+      if (pinnedIcao && !allAircraft[pinnedIcao]) pinnedIcao = null;
+
       drawRadar(data.radar_points);
-      renderFeatured(data.featured);
+      const displayFeatured = pinnedIcao ? allAircraft[pinnedIcao] : data.featured;
+      renderFeatured(displayFeatured);
       renderRecent(data.others);
 
       document.getElementById('liveCount').textContent = data.live_count || 0;
