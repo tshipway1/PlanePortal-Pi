@@ -99,7 +99,7 @@ cat > "$HOME/.config/autostart/planeportal-kiosk.desktop" <<EOF
 Type=Application
 Name=PlanePortal Kiosk
 Comment=Open PlanePortal dashboard in fullscreen Chromium
-Exec=bash -c 'sleep 8 && unclutter -idle 0.5 -root & $CHROMIUM_BIN --noerrdialogs --disable-infobars --kiosk --incognito http://localhost:5000'
+Exec=bash -c 'sleep 8 && unclutter -idle 0.5 -root & $CHROMIUM_BIN --noerrdialogs --disable-infobars --kiosk --incognito --password-store=basic http://localhost:5000'
 X-GNOME-Autostart-enabled=true
 EOF
 
