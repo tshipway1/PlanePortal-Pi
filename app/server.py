@@ -12,9 +12,12 @@ import time
 
 from glob import glob
 
-from flask import Flask, jsonify, render_template, request
+import requests as http_requests
+
+from flask import Flask, Response, jsonify, render_template, request
 
 from app.adsbdb_client import ADSBDBClient
+from app import broadcastify_client
 from app.config import AppConfig
 from app.opensky_client import OpenSkyClient
 from app.tracker import FlightTracker
@@ -41,6 +44,7 @@ class PlanePortalServer:
         )
         self._register_routes()
         self._register_settings_routes()
+        self._register_broadcastify_routes()
         self._start_time = str(int(time.time()))
         self._svg_icons = self._load_svg_icons()
 
@@ -237,6 +241,56 @@ class PlanePortalServer:
             threading.Thread(target=_restart, daemon=True).start()
 
             return jsonify({"status": "saved", "restarting": True})
+
+    def _register_broadcastify_routes(self):
+        @self.app.route("/api/atc/feed")
+        def atc_feed_info():
+            feed_id = request.args.get("id", "").strip()
+            if not feed_id or not feed_id.isdigit():
+                return jsonify({"error": "Invalid feed ID"}), 400
+            info = broadcastify_client.get_feed_info(int(feed_id))
+            if not info:
+                return jsonify({"error": "Feed not found"}), 404
+            # Don't expose the stream URL to the client — they use the proxy
+            return jsonify({
+                "feedId": info["feedId"],
+                "name": info["name"],
+                "online": info["online"],
+            })
+
+        @self.app.route("/api/atc/stream")
+        def atc_stream():
+            feed_id = request.args.get("id", "").strip()
+            if not feed_id or not feed_id.isdigit():
+                return "Invalid feed ID", 400
+            info = broadcastify_client.get_feed_info(int(feed_id))
+            if not info or not info["streamUrl"]:
+                return "Feed unavailable", 502
+            try:
+                r = http_requests.get(
+                    info["streamUrl"],
+                    stream=True,
+                    timeout=15,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (X11; Linux aarch64) "
+                        "AppleWebKit/537.36"
+                    },
+                )
+                r.raise_for_status()
+            except Exception:
+                return "Stream connection failed", 502
+
+            def generate():
+                try:
+                    for chunk in r.iter_content(chunk_size=4096):
+                        yield chunk
+                finally:
+                    r.close()
+
+            return Response(
+                generate(),
+                content_type=r.headers.get("Content-Type", "audio/mpeg"),
+            )
 
     # ── Icon type patterns ────────────────────────────────────
     # Widebody / heavy
